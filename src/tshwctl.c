@@ -44,6 +44,9 @@ void usage(char **argv) {
 		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"
 		"  -f, --bten <1|0>       Switches ttymxc2 to bluetooth\n"
 		"  -n, --bbclk12 <1|0>    Adds a 12MHz CLK on CN1_87\n"
+		"  -o, --bbclk14 <1|0>    Adds a 14.3MHz CLK on CN1_87\n"
+		"  -u, --uart2en <1|0>    Switches ttymxc1 to cn2-78/80\n"
+		"  -a, --uart4en <1|0>    Muxes ttymxc3 to cn2_86/88\n"
 		"  -s, --pushsw           Returns the value of the push switch\n"
 		"  -h, --help             This message\n"
 		"\n",
@@ -63,6 +66,9 @@ int main(int argc, char **argv)
 		{ "ddrin", 1, 0, 'r' },
 		{ "bten", 1, 0, 'b' },
 		{ "bbclk12", 1, 0, 'n' },
+		{ "bbclk14", 1, 0, 'o' },
+		{ "uart2en", 1, 0, 'u' },
+		{ "uart4en", 1, 0, 'a' },
 		{ "pushsw", 0, 0, 's' },
 		{ "help", 0, 0, 'h' },
 		{ 0, 0, 0, 0 }
@@ -75,7 +81,7 @@ int main(int argc, char **argv)
 	twifd = fpga_init();
 	if(twifd == -1) return 1;
 
-	while((c = getopt_long(argc, argv, "p:e:l:d:r:b:n:sh", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "p:e:l:d:r:b:n:sho:u:a:", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 
@@ -107,6 +113,18 @@ int main(int argc, char **argv)
 		case 'n':
 			i = atoi(optarg);
 			fpoke16(twifd, 47, i);
+			break;
+		case 'o':
+			i = atoi(optarg);
+			fpoke16(twifd, 48, i);
+			break;
+		case 'u':
+			i = atoi(optarg);
+			fpoke16(twifd, 49, i);
+			break;
+		case 'a':
+			i = atoi(optarg);
+			fpoke16(twifd, 50, i);
 			break;
 		case 's':
 			i = fpeek16(twifd, 31);
