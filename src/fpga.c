@@ -40,7 +40,7 @@ int fpga_init()
 	}
 
 	if(fd != -1) {
-		if (ioctl(fd, I2C_SLAVE, 0x28) < 0) {
+		if (ioctl(fd, I2C_SLAVE_FORCE, 0x28) < 0) {
 			perror("FPGA did not ACK 0x28\n");
 			return -1;
 		}
@@ -49,7 +49,7 @@ int fpga_init()
 	return fd;
 }
 
-void fpoke16(int twifd, uint16_t addr, uint8_t value)
+void fpoke8(int twifd, uint16_t addr, uint8_t value)
 {
 	uint8_t data[3];
 	data[0] = ((addr >> 8) & 0xff);
@@ -60,7 +60,7 @@ void fpoke16(int twifd, uint16_t addr, uint8_t value)
 	}
 }
 
-uint8_t fpeek16(int twifd, uint16_t addr)
+uint8_t fpeek8(int twifd, uint16_t addr)
 {
 	uint8_t data[2];
 	data[0] = ((addr >> 8) & 0xff);
