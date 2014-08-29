@@ -207,9 +207,18 @@ int main(int argc, char **argv)
 			fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
 			fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
 			fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
-
 			fpoke8(twifd, 44, 0x1);
 			break;
+		case 'w':
+			printf("Baud %d, %d bits\n", baud, bits);
+			autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
+			fpoke8(twifd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
+			fpoke8(twifd, 39, (uint8_t)((cnt1 & 0xff00) >> 8));
+			fpoke8(twifd, 40, (uint8_t)(cnt1 & 0xff));
+			fpoke8(twifd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
+			fpoke8(twifd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
+			fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
+			fpoke8(twifd, 45, 0x1);
 		case 'h':
 			usage(argv);
 			break;
