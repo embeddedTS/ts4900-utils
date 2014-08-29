@@ -201,17 +201,9 @@ int main(int argc, char **argv)
 		case 'q':
 			printf("Baud %d, %d bits\n", baud, bits);
 			autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
-
-			printf("cnt1 = %u\n", cnt1);
-			//val = 1979;
 			fpoke8(twifd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
 			fpoke8(twifd, 33, (uint8_t)((cnt1 & 0xff00) >> 8));
 			fpoke8(twifd, 34, (uint8_t)(cnt1 & 0xff));
-			/*printf("34: 0x%X\n", fpeek8(twifd, 34));
-			printf("33: 0x%X\n", fpeek8(twifd, 33));
-			printf("32: 0x%X\n", fpeek8(twifd, 32));*/
-
-			printf("cnt2 = %u\n", cnt2);
 			fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
 			fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
 			fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
