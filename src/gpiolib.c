@@ -8,7 +8,7 @@
 #ifdef CTL
 #include <getopt.h>
 #endif
-
+#include "gpiolib.h"
 
 void gpio_direction(int gpio, int dir)
 {

@@ -4,7 +4,7 @@
 int gpio_open(int gpio);
 // 1 output, 0 input
 void gpio_direction(int gpio, int dir);
-void gpio_close(int gpiofd);
+void gpio_close(int gpio, int gpiofd);
 int gpio_read(int gpiofd);
 
 #endif //_GPIOLIB_H_
