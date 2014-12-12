@@ -76,7 +76,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = tshwctl$(EXEEXT) nvramctl$(EXEEXT) gpioctl$(EXEEXT)
+bin_PROGRAMS = tshwctl$(EXEEXT) nvramctl$(EXEEXT) gpioctl$(EXEEXT) \
+	rtctemp$(EXEEXT) adc8390$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -89,12 +90,18 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_adc8390_OBJECTS = adc8390-adc8390.$(OBJEXT)
+adc8390_OBJECTS = $(am_adc8390_OBJECTS)
+adc8390_LDADD = $(LDADD)
 am_gpioctl_OBJECTS = gpioctl-gpiolib.$(OBJEXT)
 gpioctl_OBJECTS = $(am_gpioctl_OBJECTS)
 gpioctl_LDADD = $(LDADD)
 am_nvramctl_OBJECTS = nvramctl-nvram.$(OBJEXT)
 nvramctl_OBJECTS = $(am_nvramctl_OBJECTS)
 nvramctl_LDADD = $(LDADD)
+am_rtctemp_OBJECTS = rtctemp-rtctemp.$(OBJEXT)
+rtctemp_OBJECTS = $(am_rtctemp_OBJECTS)
+rtctemp_LDADD = $(LDADD)
 am_tshwctl_OBJECTS = tshwctl.$(OBJEXT) fpga.$(OBJEXT)
 tshwctl_OBJECTS = $(am_tshwctl_OBJECTS)
 tshwctl_LDADD = $(LDADD)
@@ -132,9 +139,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(gpioctl_SOURCES) $(nvramctl_SOURCES) $(tshwctl_SOURCES)
-DIST_SOURCES = $(gpioctl_SOURCES) $(nvramctl_SOURCES) \
-	$(tshwctl_SOURCES)
+SOURCES = $(adc8390_SOURCES) $(gpioctl_SOURCES) $(nvramctl_SOURCES) \
+	$(rtctemp_SOURCES) $(tshwctl_SOURCES)
+DIST_SOURCES = $(adc8390_SOURCES) $(gpioctl_SOURCES) \
+	$(nvramctl_SOURCES) $(rtctemp_SOURCES) $(tshwctl_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -249,6 +257,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 nvramctl_SOURCES = nvram.c nvram.h
 nvramctl_CPPFLAGS = -DCTL
+adc8390_SOURCES = adc8390.c adc8390.h
+adc8390_CPPFLAGS = -DCTL
+rtctemp_SOURCES = rtctemp.c rtctemp.h
+rtctemp_CPPFLAGS = -DCTL
 gpioctl_SOURCES = gpiolib.c gpiolib.h
 gpioctl_CPPFLAGS = -DCTL
 tshwctl_SOURCES = tshwctl.c fpga.c
@@ -330,6 +342,10 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
+adc8390$(EXEEXT): $(adc8390_OBJECTS) $(adc8390_DEPENDENCIES) $(EXTRA_adc8390_DEPENDENCIES) 
+	@rm -f adc8390$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(adc8390_OBJECTS) $(adc8390_LDADD) $(LIBS)
+
 gpioctl$(EXEEXT): $(gpioctl_OBJECTS) $(gpioctl_DEPENDENCIES) $(EXTRA_gpioctl_DEPENDENCIES) 
 	@rm -f gpioctl$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gpioctl_OBJECTS) $(gpioctl_LDADD) $(LIBS)
@@ -337,6 +353,10 @@ gpioctl$(EXEEXT): $(gpioctl_OBJECTS) $(gpioctl_DEPENDENCIES) $(EXTRA_gpioctl_DEP
 nvramctl$(EXEEXT): $(nvramctl_OBJECTS) $(nvramctl_DEPENDENCIES) $(EXTRA_nvramctl_DEPENDENCIES) 
 	@rm -f nvramctl$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nvramctl_OBJECTS) $(nvramctl_LDADD) $(LIBS)
+
+rtctemp$(EXEEXT): $(rtctemp_OBJECTS) $(rtctemp_DEPENDENCIES) $(EXTRA_rtctemp_DEPENDENCIES) 
+	@rm -f rtctemp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(rtctemp_OBJECTS) $(rtctemp_LDADD) $(LIBS)
 
 tshwctl$(EXEEXT): $(tshwctl_OBJECTS) $(tshwctl_DEPENDENCIES) $(EXTRA_tshwctl_DEPENDENCIES) 
 	@rm -f tshwctl$(EXEEXT)
@@ -348,9 +368,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adc8390-adc8390.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fpga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpioctl-gpiolib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nvramctl-nvram.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtctemp-rtctemp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tshwctl.Po@am__quote@
 
 .c.o:
@@ -366,6 +388,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+adc8390-adc8390.o: adc8390.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adc8390_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT adc8390-adc8390.o -MD -MP -MF $(DEPDIR)/adc8390-adc8390.Tpo -c -o adc8390-adc8390.o `test -f 'adc8390.c' || echo '$(srcdir)/'`adc8390.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/adc8390-adc8390.Tpo $(DEPDIR)/adc8390-adc8390.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='adc8390.c' object='adc8390-adc8390.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adc8390_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adc8390-adc8390.o `test -f 'adc8390.c' || echo '$(srcdir)/'`adc8390.c
+
+adc8390-adc8390.obj: adc8390.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adc8390_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT adc8390-adc8390.obj -MD -MP -MF $(DEPDIR)/adc8390-adc8390.Tpo -c -o adc8390-adc8390.obj `if test -f 'adc8390.c'; then $(CYGPATH_W) 'adc8390.c'; else $(CYGPATH_W) '$(srcdir)/adc8390.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/adc8390-adc8390.Tpo $(DEPDIR)/adc8390-adc8390.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='adc8390.c' object='adc8390-adc8390.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adc8390_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adc8390-adc8390.obj `if test -f 'adc8390.c'; then $(CYGPATH_W) 'adc8390.c'; else $(CYGPATH_W) '$(srcdir)/adc8390.c'; fi`
 
 gpioctl-gpiolib.o: gpiolib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gpioctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gpioctl-gpiolib.o -MD -MP -MF $(DEPDIR)/gpioctl-gpiolib.Tpo -c -o gpioctl-gpiolib.o `test -f 'gpiolib.c' || echo '$(srcdir)/'`gpiolib.c
@@ -394,6 +430,20 @@ nvramctl-nvram.obj: nvram.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nvram.c' object='nvramctl-nvram.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nvramctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nvramctl-nvram.obj `if test -f 'nvram.c'; then $(CYGPATH_W) 'nvram.c'; else $(CYGPATH_W) '$(srcdir)/nvram.c'; fi`
+
+rtctemp-rtctemp.o: rtctemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(rtctemp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rtctemp-rtctemp.o -MD -MP -MF $(DEPDIR)/rtctemp-rtctemp.Tpo -c -o rtctemp-rtctemp.o `test -f 'rtctemp.c' || echo '$(srcdir)/'`rtctemp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rtctemp-rtctemp.Tpo $(DEPDIR)/rtctemp-rtctemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rtctemp.c' object='rtctemp-rtctemp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(rtctemp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rtctemp-rtctemp.o `test -f 'rtctemp.c' || echo '$(srcdir)/'`rtctemp.c
+
+rtctemp-rtctemp.obj: rtctemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(rtctemp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rtctemp-rtctemp.obj -MD -MP -MF $(DEPDIR)/rtctemp-rtctemp.Tpo -c -o rtctemp-rtctemp.obj `if test -f 'rtctemp.c'; then $(CYGPATH_W) 'rtctemp.c'; else $(CYGPATH_W) '$(srcdir)/rtctemp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rtctemp-rtctemp.Tpo $(DEPDIR)/rtctemp-rtctemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rtctemp.c' object='rtctemp-rtctemp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(rtctemp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rtctemp-rtctemp.obj `if test -f 'rtctemp.c'; then $(CYGPATH_W) 'rtctemp.c'; else $(CYGPATH_W) '$(srcdir)/rtctemp.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
