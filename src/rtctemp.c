@@ -59,7 +59,7 @@ int rtctemp_init()
 	}
 
 	if(fd != -1) {
-		if (ioctl(fd, I2C_SLAVE_FORCE, 111) < 0) {
+		if (ioctl(fd, I2C_SLAVE_FORCE, 0x6f) < 0) {
 			perror("FPGA did not ACK 0x6f\n");
 			return -1;
 		}
@@ -89,7 +89,7 @@ static void usage(char **argv) {
 	  "Technologic Systems RTC tempsensor access\n"
 	  "\n"
 	  "  -h, --help            This message\n"
-	  "  -g, --gettemp         Get the specified address\n",
+	  "  -g, --gettemp         Read the RTC temperature\n",
 	  argv[0]
 	);
 }
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	if(twifd == -1)
 		return 1;
 
-	while((c = getopt_long(argc, argv, "ha:gs:", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "hg", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'g':
 			temp = rtctemp_read(twifd);
