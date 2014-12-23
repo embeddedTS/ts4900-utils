@@ -65,11 +65,11 @@ void usage(char **argv) {
 		"  -l, --clrout <dio>     Sets an FPGA DIO output value low\n"
 		"  -d, --ddrout <dio>     Set FPGA DIO to an output\n"
 		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"
-		"  -f, --bten <1|0>       Switches ttymxc2 to bluetooth\n"
+		"  -f, --bten <1|0>       Switches ttymxc1 to bluetooth\n"
 		"  -n, --bbclk12 <1|0>    Adds a 12MHz CLK on CN1_87\n"
 		"  -o, --bbclk14 <1|0>    Adds a 14.3MHz CLK on CN1_87\n"
 		"  -u, --uart2en <1|0>    Switches ttymxc1 to cn2-78/80\n"
-		"  -a, --uart4en <1|0>    Muxes ttymxc3 to cn2_86/88\n"
+		"  -a, --uart4en <1|0>    Muxes ttymxc4 to cn2_86/88\n"
 		"  -s, --pushsw           Returns the value of the push switch\n"
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
@@ -77,7 +77,7 @@ void usage(char **argv) {
 		"  -b, --baud <baud>      Specifies the baud rate for auto485\n"
 		"  -x, --bits <bits>      Specifies the bit size for auto485 (8n1 = 10)\n"
 		"  -q, --txen1 <1|0>      Enables auto TXEN for 485 on ttymxc1\n"
-		"  -w, --txen3 <1|0>      Enables auto TXEN for 485 on ttymxc3\n"
+		"  -w, --txen4 <1|0>      Enables auto TXEN for 485 on ttymxc4\n"
 		"  -h, --help             This message\n"
 		"\n",
 		argv[0]
@@ -109,19 +109,18 @@ int main(int argc, char **argv)
 		{ "baud", 1, 0, 'b' },
 		{ "bits", 1, 0, 'x' },
 		{ "txen1", 1, 0, 'q' },
-		{ "txen3", 1, 0, 'w' },
+		{ "txen4", 1, 0, 'w' },
 		{ "help", 0, 0, 'h' },
 		{ 0, 0, 0, 0 }
 	};
 
-	if (argc == 1) {
-		usage(argv);
+	twifd = fpga_init();
+	if(twifd == -1) {
+		perror("Can't open FPGA I2C bus");
 		return 1;
 	}
-	twifd = fpga_init();
-	if(twifd == -1) return 1;
 
-	while((c = getopt_long(argc, argv, "p:e:l:d:r:f:n:sho:u:a:m:n:tb:q:w:x:", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "p:e:l:d:r:f:n:o:u:a:sm:v:tb:x:q:w:h", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 		uint32_t cnt1, cnt2;
@@ -199,29 +198,32 @@ int main(int argc, char **argv)
 			bits = atoi(optarg);
 			break;
 		case 'q':
-			printf("Baud %d, %d bits\n", baud, bits);
-			autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
-			fpoke8(twifd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
-			fpoke8(twifd, 33, (uint8_t)((cnt1 & 0xff00) >> 8));
-			fpoke8(twifd, 34, (uint8_t)(cnt1 & 0xff));
-			fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
-			fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
-			fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
-			fpoke8(twifd, 44, 0x1);
+			if(atoi(optarg) == 1) {
+				autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
+				fpoke8(twifd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
+				fpoke8(twifd, 33, (uint8_t)((cnt1 & 0xff00) >> 8));
+				fpoke8(twifd, 34, (uint8_t)(cnt1 & 0xff));
+				fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
+				fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
+				fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
+				fpoke8(twifd, 44, 0x1);
+			} else {
+				fpoke8(twifd, 44, 0x0);
+			}
 			break;
 		case 'w':
-			printf("Baud %d, %d bits\n", baud, bits);
-			autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
-			fpoke8(twifd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
-			fpoke8(twifd, 39, (uint8_t)((cnt1 & 0xff00) >> 8));
-			fpoke8(twifd, 40, (uint8_t)(cnt1 & 0xff));
-			fpoke8(twifd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
-			fpoke8(twifd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
-			fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
-			fpoke8(twifd, 45, 0x1);
-		case 'h':
-			usage(argv);
-			break;
+			if(atoi(optarg) == 1) {
+				autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
+				fpoke8(twifd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
+				fpoke8(twifd, 39, (uint8_t)((cnt1 & 0xff00) >> 8));
+				fpoke8(twifd, 40, (uint8_t)(cnt1 & 0xff));
+				fpoke8(twifd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
+				fpoke8(twifd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
+				fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
+				fpoke8(twifd, 45, 0x1);
+			} else {
+				fpoke8(twifd, 45, 0x0);
+			}
 		default:
 			usage(argv);
 		}
