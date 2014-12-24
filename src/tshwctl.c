@@ -65,11 +65,11 @@ void usage(char **argv) {
 		"  -l, --clrout <dio>     Sets an FPGA DIO output value low\n"
 		"  -d, --ddrout <dio>     Set FPGA DIO to an output\n"
 		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"
-		"  -f, --bten <1|0>       Switches ttymxc1 to bluetooth\n"
+		"  -f, --bten <1|0>       Route ttymxc1 to bluetooth\n"
 		"  -n, --bbclk12 <1|0>    Adds a 12MHz CLK on CN1_87\n"
 		"  -o, --bbclk14 <1|0>    Adds a 14.3MHz CLK on CN1_87\n"
-		"  -u, --uart2en <1|0>    Switches ttymxc1 to cn2-78/80\n"
-		"  -a, --uart4en <1|0>    Muxes ttymxc4 to cn2_86/88\n"
+		"  -u, --uart1en <1|0>    Route ttymxc1 to cn2-78/80\n"
+		"  -a, --uart4en <1|0>    Route ttymxc4 to cn2_90/92\n"
 		"  -s, --pushsw           Returns the value of the push switch\n"
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		{ "bten", 1, 0, 'f' },
 		{ "bbclk12", 1, 0, 'n' },
 		{ "bbclk14", 1, 0, 'o' },
-		{ "uart2en", 1, 0, 'u' },
+		{ "uart1en", 1, 0, 'u' },
 		{ "uart4en", 1, 0, 'a' },
 		{ "pushsw", 0, 0, 's' },
 		{ "addr", 1, 0, 'm' },
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while((c = getopt_long(argc, argv, "p:e:l:d:r:f:n:o:u:a:sm:v:tb:x:q:w:h", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "+p:e:l:d:r:f:n:o:u:a:sm:v:tb:x:q:w:h", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 		uint32_t cnt1, cnt2;
@@ -198,6 +198,11 @@ int main(int argc, char **argv)
 			bits = atoi(optarg);
 			break;
 		case 'q':
+			if(baud == 0 || bits == 0) {
+				fprintf(stderr, "You must set baud and base to a non-zero value\n");
+				return 1;
+			}
+
 			if(atoi(optarg) == 1) {
 				autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
 				fpoke8(twifd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
@@ -212,6 +217,10 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'w':
+			if(baud == 0 || bits == 0) {
+				fprintf(stderr, "You must set baud and base to a non-zero value\n");
+				return 1;
+			}
 			if(atoi(optarg) == 1) {
 				autotx_bitstoclks(bits, baud, &cnt1, &cnt2);
 				fpoke8(twifd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
@@ -224,6 +233,7 @@ int main(int argc, char **argv)
 			} else {
 				fpoke8(twifd, 45, 0x0);
 			}
+			break;
 		default:
 			usage(argv);
 		}
