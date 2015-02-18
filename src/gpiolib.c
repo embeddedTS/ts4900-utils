@@ -26,44 +26,81 @@ void gpio_direction(int gpio, int dir)
 	close(gpiofd);
 }
 
-int gpio_open(int gpio)
+int gpio_export(int gpio)
 {
 	int efd;
+	char buf[50];
+	int gpiofd, ret;
 	efd = open("/sys/class/gpio/export", O_WRONLY);
 
 	if(efd != -1) {
-		int gpiofd, ret;
-		char buf[50];
 		sprintf(buf, "%d", gpio); 
 		ret = write(efd, buf, strlen(buf));
+		if(ret < 0) {
+			perror("Export failed");
+			return -2;
+		}
 		close(efd);
-		if(ret == -1) return -1;
-		sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
-		gpiofd = open(buf, O_WRONLY);
-		return gpiofd;
 	} else {
+		// If we can't open the export file, we probably
+		// dont have any gpio permissions
 		return -1;
 	}
+	return 0;
 }
 
-void gpio_close(int gpio, int gpiofd)
+void gpio_unexport(int gpio)
 {
-	int fd;
+	int gpiofd;
 	char buf[50];
-	assert(gpiofd);
-	close(gpiofd);
-
-	fd = open("/sys/class/gpio/unexport", O_WRONLY);
+	gpiofd = open("/sys/class/gpio/unexport", O_WRONLY);
 	sprintf(buf, "%d", gpio);
-	write(fd, buf, strlen(buf));
-	close(fd);
+	write(gpiofd, buf, strlen(buf));
+	close(gpiofd);
 }
 
-int gpio_read(int gpiofd)
+int gpio_read(int gpio)
 {
-	char in[2];
-	read(gpiofd, &in, 1);
+	char in[3] = {0, 0, 0};
+	char buf[50];
+	int nread, gpiofd;
+	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
+	gpiofd = open(buf, O_RDWR);
+	if(gpiofd < 0) {
+		fprintf(stderr, "Failed to open gpio %d value\n", gpio);
+		perror("gpio failed");
+	}
+
+	do {
+		nread = read(gpiofd, in, 1);
+	} while (nread == 0);
+	if(nread == -1){
+		perror("GPIO Read failed");
+		return -1;
+	}
+	
+	close(gpiofd);
 	return atoi(in);
+}
+
+int gpio_write(int gpio, int val)
+{	
+	char buf[50];
+	int nread, ret, gpiofd;
+	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
+	gpiofd = open(buf, O_RDWR);
+	if(gpiofd > 0) {
+		snprintf(buf, 2, "%d", val);
+		ret = write(gpiofd, buf, 2);
+		if(ret < 0) {
+			perror("failed to set gpio");
+			return 1;
+		}
+
+		close(gpiofd);
+		if(ret == 2) return 0;
+	}
+	return 1;
 }
 
 #ifdef CTL
@@ -101,39 +138,38 @@ int main(int argc, char **argv)
 	}
 
 	while((c = getopt_long(argc, argv, "p:e:l:d:r:", long_options, NULL)) != -1) {
-		int gpiofd;
 		int gpio, i;
 
 		switch(c) {
 		case 'p':
 			gpio = atoi(optarg);
-			gpiofd = gpio_open(gpio);
+			gpio_export(gpio);
 			printf("gpio%d=%d\n", gpio, gpio_read(gpio));
-			gpio_close(gpio, gpiofd);
+			gpio_unexport(gpio);
 			break;
 		case 'e':
 			gpio = atoi(optarg);
-			gpiofd = gpio_open(gpio);
-			write(gpiofd, "1", 1);
-			gpio_close(gpio, gpiofd);
+			gpio_export(gpio);
+			gpio_write(gpio, 1);
+			gpio_unexport(gpio);
 			break;
 		case 'l':
 			gpio = atoi(optarg);
-			gpiofd = gpio_open(gpio);
-			write(gpiofd, "1", 0);
-			gpio_close(gpio, gpiofd);
+			gpio_export(gpio);
+			gpio_write(gpio, 0);
+			gpio_unexport(gpio);
 			break;
 		case 'd':
 			gpio = atoi(optarg);
-			gpiofd = gpio_open(gpio);
-			gpio_direction(gpiofd, 1);
-			gpio_close(gpio, gpiofd);
+			gpio_export(gpio);
+			gpio_direction(gpio, 1);
+			gpio_unexport(gpio);
 			break;
 		case 'r':
 			gpio = atoi(optarg);
-			gpiofd = gpio_open(gpio);
-			gpio_direction(gpiofd, 0);
-			gpio_close(gpio, gpiofd);
+			gpio_export(gpio);
+			gpio_direction(gpio, 0);
+			gpio_unexport(gpio);
 			break;
 		case 'h':
 		default:
