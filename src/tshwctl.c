@@ -65,19 +65,11 @@ void usage(char **argv) {
 		"  -l, --clrout <dio>     Sets an FPGA DIO output value low\n"
 		"  -d, --ddrout <dio>     Set FPGA DIO to an output\n"
 		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"
-		"  -f, --bten <1|0>       Route ttymxc1 to bluetooth\n"
-		"  -n, --bbclk12 <1|0>    Adds a 12MHz CLK on CN1_87\n"
-		"  -o, --bbclk14 <1|0>    Adds a 14.3MHz CLK on CN1_87\n"
-		"  -u, --uart1en <1|0>    Route ttymxc1 to cn2-78/80\n"
-		"  -a, --uart4en <1|0>    Route ttymxc4 to cn2_90/92\n"
-		"  -s, --pushsw           Returns the value of the push switch\n"
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
 		"  -t, --peek             Reads from the specified address\n"
 		"  -b, --baud <baud>      Specifies the baud rate for auto485\n"
 		"  -x, --bits <bits>      Specifies the bit size for auto485 (8n1 = 10)\n"
-		"  -q, --txen1 <1|0>      Enables auto TXEN for 485 on ttymxc1\n"
-		"  -w, --txen4 <1|0>      Enables auto TXEN for 485 on ttymxc4\n"
 		"  -h, --help             This message\n"
 		"\n",
 		argv[0]
@@ -97,19 +89,11 @@ int main(int argc, char **argv)
 		{ "clrout", 1, 0, 'l' },
 		{ "ddrout", 1, 0, 'd' },
 		{ "ddrin", 1, 0, 'r' },
-		{ "bten", 1, 0, 'f' },
-		{ "bbclk12", 1, 0, 'n' },
-		{ "bbclk14", 1, 0, 'o' },
-		{ "uart1en", 1, 0, 'u' },
-		{ "uart4en", 1, 0, 'a' },
-		{ "pushsw", 0, 0, 's' },
 		{ "addr", 1, 0, 'm' },
 		{ "poke", 1, 0, 'v' },
 		{ "peek", 0, 0, 't' },
 		{ "baud", 1, 0, 'b' },
 		{ "bits", 1, 0, 'x' },
-		{ "txen1", 1, 0, 'q' },
-		{ "txen4", 1, 0, 'w' },
 		{ "help", 0, 0, 'h' },
 		{ 0, 0, 0, 0 }
 	};
@@ -120,7 +104,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while((c = getopt_long(argc, argv, "+p:e:l:d:r:f:n:o:u:a:sm:v:tb:x:q:w:h", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "+p:e:l:d:r:m:v:tb:x:h", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 		uint32_t cnt1, cnt2;
@@ -145,26 +129,6 @@ int main(int argc, char **argv)
 		case 'r':
 			gpio = atoi(optarg);
 			fpgadio_ddr(gpio, 0);
-			break;
-		case 'f':
-			i = atoi(optarg);
-			fpoke8(twifd, 46, i);
-			break;
-		case 'n':
-			i = atoi(optarg);
-			fpoke8(twifd, 47, i);
-			break;
-		case 'o':
-			i = atoi(optarg);
-			fpoke8(twifd, 48, i);
-			break;
-		case 'u':
-			i = atoi(optarg);
-			fpoke8(twifd, 49, i);
-			break;
-		case 'a':
-			i = atoi(optarg);
-			fpoke8(twifd, 50, i);
 			break;
 		case 'm':
 			opt_addr = 1;
@@ -211,10 +175,7 @@ int main(int argc, char **argv)
 				fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
 				fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
 				fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
-				fpoke8(twifd, 44, 0x1);
-			} else {
-				fpoke8(twifd, 44, 0x0);
-			}
+			} 
 			break;
 		case 'w':
 			if(baud == 0 || bits == 0) {
@@ -229,9 +190,6 @@ int main(int argc, char **argv)
 				fpoke8(twifd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
 				fpoke8(twifd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
 				fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
-				fpoke8(twifd, 45, 0x1);
-			} else {
-				fpoke8(twifd, 45, 0x0);
 			}
 			break;
 		default:
