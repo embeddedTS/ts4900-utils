@@ -204,6 +204,7 @@ int main(int argc, char **argv)
 		{ "get", 0, 0, 'g' },
 		{ "set", 0, 0, 's' },
 		{ "dump", 0, 0, 'c' },
+		{ "showall", 0, 0, 'q' },
 		{ "help", 0, 0, 'h' },
 		{ 0, 0, 0, 0 }
 	};
