@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-//#include <termios.h>
 #include <asm-generic/termbits.h>
 #include <asm-generic/ioctls.h>
 #include <fcntl.h>
@@ -187,6 +186,7 @@ int main(int argc, char **argv)
 	int opt_poke = 0, opt_peek = 0, opt_auto485 = 0;
 	int baud = 0;
 	int model;
+	uint8_t pokeval = 0;
 	char *uartmode = 0;
 
 	static struct option long_options[] = {
@@ -249,6 +249,7 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			opt_poke = 1;
+			pokeval = strtoull(optarg, NULL, 0);
 			break;
 		case 'i':
 			uartmode = strdup(optarg);
@@ -328,8 +329,7 @@ int main(int argc, char **argv)
 
 	if(opt_poke) {
 		if(opt_addr) {
-			val = strtoull(optarg, NULL, 0);
-			fpoke8(twifd, addr, val);
+			fpoke8(twifd, addr, pokeval);
 		} else {
 			fprintf(stderr, "No address specified\n");
 		}
