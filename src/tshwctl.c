@@ -155,11 +155,12 @@ void usage(char **argv) {
 		"Usage: %s [OPTIONS] ...\n"
 		"Technologic Systems TS-4900 Utility\n"
 		"\n"
+		/*  Use the sysfs interface, not these
 		"  -p, --getin <dio>      Returns the input value of an FPGA DIO\n"
 		"  -e, --setout <dio>     Sets an FPGA DIO output value high\n"
 		"  -l, --clrout <dio>     Sets an FPGA DIO output value low\n"
 		"  -d, --ddrout <dio>     Set FPGA DIO to an output\n"
-		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"
+		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"*/
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
 		"  -t, --peek             Reads from the specified address\n"
