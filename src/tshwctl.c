@@ -153,7 +153,7 @@ void auto485_en(int uart, int baud, char *mode)
 void usage(char **argv) {
 	fprintf(stderr,
 		"Usage: %s [OPTIONS] ...\n"
-		"Technologic Systems TS-4900 Utility\n"
+		"Technologic Systems I2C FPGA Utility\n"
 		"\n"
 		/*  Use the sysfs interface, not these
 		"  -p, --getin <dio>      Returns the input value of an FPGA DIO\n"
