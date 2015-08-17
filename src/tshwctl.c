@@ -15,6 +15,7 @@
 
 #include "fpga.h"
 #include "crossbar-ts4900.h"
+#include "crossbar-ts7970.h"
 
 static twifd;
 
@@ -189,6 +190,8 @@ int main(int argc, char **argv)
 	int model;
 	uint8_t pokeval = 0;
 	char *uartmode = 0;
+	struct cbarpin *cbar_inputs, *cbar_outputs;
+	int cbar_size, cbar_mask;
 
 	static struct option long_options[] = {
 		{ "getin", 1, 0, 'p' },
@@ -212,6 +215,21 @@ int main(int argc, char **argv)
 
 	twifd = fpga_init();
 	model = get_model();
+	if(model == 0x4900) {
+		cbar_inputs = ts4900_inputs; 
+		cbar_outputs = ts4900_outputs;
+		cbar_size = 5;
+		cbar_mask = 7;
+	} else if(model == 0x7970) {
+		cbar_inputs = ts7970_inputs; 
+		cbar_outputs = ts7970_outputs;
+		cbar_size = 6;
+		cbar_mask = 3;
+	} else {
+		fprintf(stderr, "Unsupported model %d\n", model);
+		return 1;
+	}
+
 
 	if(twifd == -1) {
 		perror("Can't open FPGA I2C bus");
@@ -265,62 +283,67 @@ int main(int argc, char **argv)
 			opt_auto485 = atoi(optarg);
 			break;
 		case 'g':
-			for (i = 0; ts4900_inputs[i].name != 0; i++)
+			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
-				uint8_t mode = fpeek8(twifd, ts4900_inputs[i].addr) >> 3;
-				printf("%s=%s\n", ts4900_inputs[i].name, ts4900_outputs[mode].name);
+				uint8_t mode = fpeek8(twifd, cbar_inputs[i].addr) >> (8 - cbar_size);
+				printf("%s=%s\n", cbar_inputs[i].name, cbar_outputs[mode].name);
 			}
 			break;
 		case 's':
-			for (i = 0; ts4900_inputs[i].name != 0; i++)
+			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
-				char *value = getenv(ts4900_inputs[i].name);
+				char *value = getenv(cbar_inputs[i].name);
 				int j;
 				if(value != NULL) {
-					for (j = 0; ts4900_outputs[j].name != 0; j++) {
-						if(strcmp(ts4900_outputs[j].name, value) == 0) {
-							int mode = ts4900_outputs[j].addr;
-							uint8_t val = fpeek8(twifd, ts4900_inputs[i].addr);
-							fpoke8(twifd, ts4900_inputs[i].addr, (mode << 3) | (val & 0x7));
+					for (j = 0; cbar_outputs[j].name != 0; j++) {
+						if(strcmp(cbar_outputs[j].name, value) == 0) {
+							int mode = cbar_outputs[j].addr;
+							uint8_t val = fpeek8(twifd, cbar_inputs[i].addr);
+							fpoke8(twifd, cbar_inputs[i].addr, 
+								   (mode << (8 - cbar_size)) | (val & cbar_mask));
+
 							break;
 						}
 					}
-					if(ts4900_outputs[i].name == 0) {
+					if(cbar_outputs[i].name == 0) {
 						fprintf(stderr, "Invalid value \"%s\" for input %s\n",
-							value, ts4900_inputs[i].name);
+							value, cbar_inputs[i].name);
 					}
 				}
 			}
 			break;
 		case 'c':
 			i = 0;
-			printf("%11s (DIR) (VAL) FPGA Input\n", "FPGA Output");
-			for (i = 0; ts4900_inputs[i].name != 0; i++)
+			printf("%13s (DIR) (VAL) FPGA Output\n", "FPGA Pad");
+			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
-				uint8_t value = fpeek8(twifd, ts4900_inputs[i].addr);
-				uint8_t mode = value >> 3;
+				uint8_t value = fpeek8(twifd, cbar_inputs[i].addr);
+				uint8_t mode = value >> (8 - cbar_size);
 				char *dir = value & 0x1 ? "out" : "in";
 				int val;
-				if(value & 0x1) {
+
+				// 4900 uses 5 bits for cbar, 7970/7990 use 6 and share
+				// the data bit for input/output
+				if(value & 0x1 || cbar_size == 6) {
 					val = value & 0x2 ? 1 : 0;
 				} else {
 					val = value & 0x4 ? 1 : 0;
 				}
-				printf("%11s (%3s) (%3d) %s\n", 
-					ts4900_inputs[i].name,
+				printf("%13s (%3s) (%3d) %s\n", 
+					cbar_inputs[i].name,
 					dir,
 					val,
-					ts4900_outputs[mode].name);
+					cbar_outputs[mode].name);
 			}
 			break;
 		case 'q':
 			printf("FPGA Inputs:\n");
-			for (i = 0; ts4900_inputs[i].name != 0; i++) {
-				printf("%s\n", ts4900_inputs[i].name);
+			for (i = 0; cbar_inputs[i].name != 0; i++) {
+				printf("%s\n", cbar_inputs[i].name);
 			}
 			printf("\nFPGA Outputs:\n");
-			for (i = 0; ts4900_outputs[i].name != 0; i++) {
-				printf("%s\n", ts4900_outputs[i].name);
+			for (i = 0; cbar_outputs[i].name != 0; i++) {
+				printf("%s\n", cbar_outputs[i].name);
 			}
 			break;
 		default:

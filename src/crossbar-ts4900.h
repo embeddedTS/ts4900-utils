@@ -1,5 +1,5 @@
-#ifndef _CROSSBAR_H_
-#define _CROSSBAR_H_
+#ifndef _CROSSBAR_TS4900_H_
+#define _CROSSBAR_TS4900_H_
 #include "fpga.h"
 
 struct cbarpin ts4900_inputs[] = {
@@ -30,8 +30,8 @@ struct cbarpin ts4900_inputs[] = {
 
 struct cbarpin ts4900_outputs[] = {
 	{ 0, "UNCHANGED" },
-	{ 1, "BLUETOOTH_RTS" },
-	{ 2, "BLUETOOTH_TXD" },
+	{ 1, "BT_RTS" },
+	{ 2, "BT_TXD" },
 	{ 3, "CN1_63" },
 	{ 4, "CN1_67" },
 	{ 5, "CN2_100" },
@@ -64,4 +64,4 @@ struct cbarpin ts4900_outputs[] = {
 	{ 0, 0 },
 };
 
-#endif //_CROSSBAR_H_
+#endif //_CROSSBAR_TS4900_H_
