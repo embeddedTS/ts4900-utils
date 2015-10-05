@@ -19,23 +19,6 @@
 
 static twifd;
 
-int fpgadio_read(int dio) {
-	uint8_t data = fpeek8(twifd, dio);
-	if(data & 0x4) return 1;
-	else return 0;
-}
-
-int fpgadio_set(int dio, int value) {
-	if(value) fpoke8(twifd, dio, 0x3);
-	else fpoke8(twifd, dio, 0x1);
-}
-
-// Value 1 is output, 0 is input
-int fpgadio_ddr(int dio, int value) {
-	if(value) fpoke8(twifd, dio, 0x1);
-	else fpoke8(twifd, dio, 0x0);
-}
-
 int get_model()
 {
 	FILE *proc;
@@ -156,12 +139,6 @@ void usage(char **argv) {
 		"Usage: %s [OPTIONS] ...\n"
 		"Technologic Systems I2C FPGA Utility\n"
 		"\n"
-		/*  Use the sysfs interface, not these
-		"  -p, --getin <dio>      Returns the input value of an FPGA DIO\n"
-		"  -e, --setout <dio>     Sets an FPGA DIO output value high\n"
-		"  -l, --clrout <dio>     Sets an FPGA DIO output value low\n"
-		"  -d, --ddrout <dio>     Set FPGA DIO to an output\n"
-		"  -r, --ddrin <dio>      Set FPGA DIO to an input\n"*/
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
 		"  -t, --peek             Reads from the specified address\n"
@@ -194,11 +171,6 @@ int main(int argc, char **argv)
 	int cbar_size, cbar_mask;
 
 	static struct option long_options[] = {
-		{ "getin", 1, 0, 'p' },
-		{ "setout", 1, 0, 'e' },
-		{ "clrout", 1, 0, 'l' },
-		{ "ddrout", 1, 0, 'd' },
-		{ "ddrin", 1, 0, 'r' },
 		{ "addr", 1, 0, 'm' },
 		{ "poke", 1, 0, 'v' },
 		{ "peek", 0, 0, 't' },
@@ -225,43 +197,28 @@ int main(int argc, char **argv)
 		cbar_outputs = ts7970_outputs;
 		cbar_size = 6;
 		cbar_mask = 3;
+	} else if(model == 0x7990) {
+		cbar_inputs = ts7990_inputs; 
+		cbar_outputs = ts7990_outputs;
+		cbar_size = 6;
+		cbar_mask = 3;
 	} else {
 		fprintf(stderr, "Unsupported model %d\n", model);
 		return 1;
 	}
-
 
 	if(twifd == -1) {
 		perror("Can't open FPGA I2C bus");
 		return 1;
 	}
 
-	while((c = getopt_long(argc, argv, "+p:e:l:d:r:m:v:i:x:ta:cgsqh", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "+m:v:i:x:ta:cgsqh", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 		int uart;
 
 		switch(c) {
-		case 'p':
-			gpio = atoi(optarg);
-			printf("gpio%d=%d\n", gpio, fpgadio_read(gpio));
-			break;
-		case 'e':
-			gpio = atoi(optarg);
-			fpgadio_set(gpio, 1);
-			break;
-		case 'l':
-			gpio = atoi(optarg);
-			fpgadio_set(gpio, 0);
-			break;
-		case 'd':
-			gpio = atoi(optarg);
-			fpgadio_ddr(gpio, 1);
-			break;
-		case 'r':
-			gpio = atoi(optarg);
-			fpgadio_ddr(gpio, 0);
-			break;
+
 		case 'm':
 			opt_addr = 1;
 			addr = strtoull(optarg, NULL, 0);
