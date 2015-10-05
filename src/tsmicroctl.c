@@ -98,18 +98,6 @@ void do_info(int twifd)
 	}
 }
 
-void do_read(int twifd)
-{
-	printf("input,value\n");
-	while(1) {
-		uint16_t data[20];
-		sread(twifd, data);
-		printf("p10,0x%X\n", data[4]);
-		printf("p11,0x%X\n", data[5]);
-		printf("p12,0x%X\n", data[6]);
-	}
-}
-
 static void usage(char **argv) {
 	fprintf(stderr, "Usage: %s [OPTION] ...\n"
 	  "Technologic Systems Microcontroller Access\n"
