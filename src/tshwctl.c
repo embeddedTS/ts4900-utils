@@ -16,6 +16,7 @@
 #include "fpga.h"
 #include "crossbar-ts4900.h"
 #include "crossbar-ts7970.h"
+#include "crossbar-ts7990.h"
 
 static twifd;
 
