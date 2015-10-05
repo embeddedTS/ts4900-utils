@@ -1,49 +1,25 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/mman.h>
 
 #include "gpiolib-fast.h"
 
-volatile uint32_t *gpioreg;
-
-int gpiofast_direction(int gpio, int dir)
-{
-	int bank = gpio / 32;
-	int io = gpio % 32;
-
-	if(dir)	gpioreg[((bank * 0x4000) + 0x4) / 4] |= (1 << io);
-	else gpioreg[((bank * 0x4000) + 0x4) / 4] &= ~(1 << io);
-}
-
-int gpiofast_read(int gpio)
-{
-	int bank = gpio / 32;
-	int io = gpio % 32;
-
-	return gpioreg[((bank * 0x4000) + 0x8) / 4] & (1 << io) ? 1 : 0;
-}
-
-int gpiofast_write(int gpio, int val)
-{
-	int bank = gpio / 32;
-	int io = gpio % 32;
-
-	if(val)	gpioreg[(bank * 0x4000) / 4] |= (1 << io);
-	else gpioreg[(bank * 0x4000) / 4] &= ~(1 << io);
-}
-
-int gpiofast_init()
+volatile uint32_t* gpiofast_init()
 {
 	int mem;
+	volatile uint32_t *gpioreg;
+
 	mem = open("/dev/mem", O_RDWR|O_SYNC);
 	if (mem < 1){ 
 		perror("Couldn't open /dev/mem");
-		return -1;
+		return 0;
 	}
-	gpioreg = mmap(0, getpagesize() * 20, PROT_READ|PROT_WRITE, MAP_SHARED, mem, 0x0209C000);
+	gpioreg = mmap(0, getpagesize() * 28, PROT_READ|PROT_WRITE, MAP_SHARED, mem, MX6_GPIO_BASE);
 	if(gpioreg == 0) {
 		perror("Couldn't map GPIO mem");
-		return -2;
+		return 0;
 	}
+	return gpioreg;
 }

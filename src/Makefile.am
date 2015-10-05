@@ -13,4 +13,7 @@ gpioctl_CPPFLAGS = -DCTL
 tshwctl_SOURCES = tshwctl.c fpga.c
 tshwctl_LDFLAGS = -lm
 
-bin_PROGRAMS = tshwctl nvramctl gpioctl rtctemp adc8390
+load_fpga_SOURCES = load_fpga-ts7970.c load_fpga.c -o load_fpga gpiolib-fast.c ispvm.c
+load_fpga_LDFLAGS = -mcpu=cortexa9
+
+bin_PROGRAMS = tshwctl nvramctl gpioctl rtctemp adc8390 load_fpga
