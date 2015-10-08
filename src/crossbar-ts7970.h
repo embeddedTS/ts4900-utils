@@ -84,7 +84,7 @@ struct cbarpin ts7970_outputs[] = {
 	{ 39, "DIO_2_IN" },
 	{ 40, "LCD_D10" },
 	{ 41, "PUSH_SW_CPU" },
-	{ 42, "HD1_SPI_CLK" }
+	{ 42, "HD1_SPI_CLK" },
 	{ 0, 0 },
 };
 
