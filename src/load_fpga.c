@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "ispvm.h"
 #include "load_fpga-ts7970.h"
+#include "load_fpga-ts7990.h"
 
 char *get_model()
 {
@@ -46,6 +47,13 @@ int main(int argc, char **argv)
 		hardware.readport = readport_ts7970;
 		hardware.writeport = writeport_ts7970;
 		hardware.sclock = sclock_ts7970;
+		hardware.udelay = 0;
+	} else if(strstr(model, "TPC-7990")) {
+		hardware.init = init_ts7990;
+		hardware.restore =restore_ts7990;
+		hardware.readport = readport_ts7990;
+		hardware.writeport = writeport_ts7990;
+		hardware.sclock = sclock_ts7990;
 		hardware.udelay = 0;
 	} else {
 		printf("Model \"%s\" not supported\n", model);
