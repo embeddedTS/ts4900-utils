@@ -113,7 +113,6 @@ void auto485_en(int uart, int baud, char *mode)
 		printf("Setting Auto TXEN for %d baud and %d bits per symbol (%s)\n",
 		baud, symsz, mode);
 	}
-	
 
 	if(uart == 1) {
 		autotx_bitstoclks(symsz, baud, &cnt1, &cnt2);
@@ -133,7 +132,6 @@ void auto485_en(int uart, int baud, char *mode)
 		fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
 	}
 }
-
 
 void usage(char **argv) {
 	fprintf(stderr,
@@ -243,8 +241,15 @@ int main(int argc, char **argv)
 		case 'g':
 			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
+				int j;
 				uint8_t mode = fpeek8(twifd, cbar_inputs[i].addr) >> (8 - cbar_size);
-				printf("%s=%s\n", cbar_inputs[i].name, cbar_outputs[mode].name);
+				for (j = 0; cbar_outputs[j].name != 0; j++)
+				{
+					if(cbar_outputs[j].addr == mode){
+						printf("%s=%s\n", cbar_inputs[i].name, cbar_outputs[j].name);
+						break;
+					}
+				}
 			}
 			break;
 		case 's':
@@ -279,6 +284,7 @@ int main(int argc, char **argv)
 				uint8_t mode = value >> (8 - cbar_size);
 				char *dir = value & 0x1 ? "out" : "in";
 				int val;
+				int j;
 
 				// 4900 uses 5 bits for cbar, 7970/7990 use 6 and share
 				// the data bit for input/output
@@ -287,11 +293,19 @@ int main(int argc, char **argv)
 				} else {
 					val = value & 0x4 ? 1 : 0;
 				}
-				printf("%13s (%3s) (%3d) %s\n", 
-					cbar_inputs[i].name,
-					dir,
-					val,
-					cbar_outputs[mode].name);
+
+				for (j = 0; cbar_outputs[j].name != 0; j++)
+				{
+					if(cbar_outputs[j].addr == mode){
+						printf("%13s (%3s) (%3d) %s\n", 
+							cbar_inputs[i].name,
+							dir,
+							val,
+							cbar_outputs[j].name);
+						break;
+					}
+				}
+
 			}
 			break;
 		case 'q':
@@ -326,9 +340,8 @@ int main(int argc, char **argv)
 	}
 
 	if(opt_auto485) {
-		int uart;
 		if(opt_auto485 != 1 && opt_auto485 != 3) {
-			fprintf(stderr, "Specify value 1 or 3 for ttymxc1 or ttymxc3 (specified %d)\n", uart);
+			fprintf(stderr, "Specify value 1 or 3 for ttymxc1 or ttymxc3 (specified %d)\n", opt_auto485);
 			return 1;
 		}
 		auto485_en(opt_auto485, baud, uartmode);
