@@ -56,7 +56,7 @@ int adc_init()
 			namefd = open(path, O_RDONLY);
 			if(namefd == -1) continue;
 			if(read(namefd, busname, 128) == -1) perror("busname");
-			if(strncmp(busname, "adc-i2c.29", 10) == 0)
+			if(strstr(busname, "adc-i2c") != 0)
 			{
 				snprintf(path, 100, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
@@ -150,8 +150,10 @@ int main(int argc, char **argv)
 	};
 
 	twifd = adc_init();
-	if(twifd == -1)
+	if(twifd == -1){
+		fprintf(stderr, "Cannot find the ADC device\n");
 		return 1;
+	}
 
 	while((c = getopt_long(argc, argv, "hrs", long_options, NULL)) != -1) {
 		switch (c) {
