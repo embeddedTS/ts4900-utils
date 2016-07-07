@@ -58,6 +58,18 @@ uint16_t inline rscale(uint16_t data, uint16_t r1, uint16_t r2)
 	return sscale(ret);
 }
 
+// Scale for 0-20mA current loop
+// shunt in ohms
+uint16_t inline cscale(uint16_t data, uint16_t shunt)
+{
+	uint32_t ret = sscale(data);
+	// Scale to microamps
+	ret *= 1000;
+	ret /= shunt;
+
+	return (uint16_t)ret;
+}
+
 void do_sleep(int twifd, int seconds)
 {
 	unsigned char dat[4] = {0};
@@ -104,6 +116,10 @@ void do_info(int twifd)
 		printf("RAM_VREF=%d\n", sscale(data[13]));
 		printf("V3P3=%d\n", rscale(data[14], 499, 499));
 		printf("SILABREV=%d\n", data[15]);
+
+		printf("SILAB_P10_UA=%d\n", cscale(data[4], 110));
+		printf("SILAB_P11_UA=%d\n", cscale(data[5], 110));
+		printf("SILAB_P12_UA=%d\n", cscale(data[6], 110));
 	}
 }
 
