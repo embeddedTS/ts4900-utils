@@ -27,17 +27,18 @@ int adc_init()
 	int len;
 	DIR *d;
 	struct dirent *dir;
+	int ret;
 
 	memset(path, 0, 256);
 	anselfd = open("/sys/class/gpio/export", O_WRONLY | O_SYNC);
 	if(anselfd == -1) perror("adc_init 1");
 	len = snprintf(path, 255, "%d", ANSEL_GPIO);
-	write(anselfd, path, len);
+	ret = write(anselfd, path, len);
 	close(anselfd);
 	snprintf(path, 255, "/sys/class/gpio/gpio%d/direction", ANSEL_GPIO);
 	anselfd = open(path, O_RDWR | O_SYNC);
 	if(anselfd == -1) perror("adc_init 2");
-	write(anselfd, "out", 3);
+	ret = write(anselfd, "out", 3);
 	close(anselfd);
 	snprintf(path, 255, "/sys/class/gpio/gpio%d/value", ANSEL_GPIO);
 	anselfd = open(path, O_RDWR | O_SYNC);
@@ -78,7 +79,7 @@ int adc_init()
 int adc_readchannel(int twifd, int channel)
 {
 	uint8_t data[3];
-	int chan = 0;
+	int chan = 0, ret = 0;
 
 	switch (channel)
 	{
@@ -88,19 +89,19 @@ int adc_readchannel(int twifd, int channel)
 		break;
 	case 2:
 		chan = 2;
-		write(anselfd, "0", 1);
+		ret = write(anselfd, "0", 1);
 		break;
 	case 3:
 		chan = 2;
-		write(anselfd, "1", 1);
+		ret = write(anselfd, "1", 1);
 		break;
 	case 4:
 		chan = 3;
-		write(anselfd, "0", 1);
+		ret = write(anselfd, "0", 1);
 		break;
 	case 5:
 		chan = 3;
-		write(anselfd, "1", 1);
+		ret = write(anselfd, "1", 1);
 		break;
 	}
 
@@ -127,7 +128,7 @@ static void usage(char **argv) {
 	  "Technologic Systems TS-8390 ADC\n"
 	  "\n"
 	  "  -h, --help     This message\n"
-	  "  -r, --read     Read all ADCs once\n",
+	  "  -r, --read     Read all ADCs once\n"
 	  "  -s, --showraw  Show raw instead of volts\n"
 	  "  	Note: Differential channels always print raw values\n",
 	  	argv[0]

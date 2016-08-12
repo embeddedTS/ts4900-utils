@@ -87,7 +87,7 @@ int gpio_select(int gpio)
 	}
 
 	// Read first since there is always an initial status
-	read(irqfd, &buf, sizeof(buf));
+	ret = read(irqfd, &buf, sizeof(buf));
 
 	while(1) {
 		FD_SET(irqfd, &fds);
@@ -96,7 +96,7 @@ int gpio_select(int gpio)
 		{
 			FD_CLR(irqfd, &fds);  //Remove the filedes from set
 			// Clear the junk data in the IRQ file
-			read(irqfd, &buf, sizeof(buf));
+			ret = read(irqfd, &buf, sizeof(buf));
 			return 1;
 		}
 	}
@@ -127,11 +127,11 @@ int gpio_export(int gpio)
 
 void gpio_unexport(int gpio)
 {
-	int gpiofd;
+	int gpiofd, ret;
 	char buf[50];
 	gpiofd = open("/sys/class/gpio/unexport", O_WRONLY);
 	sprintf(buf, "%d", gpio);
-	write(gpiofd, buf, strlen(buf));
+	ret = write(gpiofd, buf, strlen(buf));
 	close(gpiofd);
 }
 

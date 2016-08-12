@@ -1,11 +1,11 @@
+#include <asm-generic/termbits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <asm-generic/termbits.h>
-#include <asm-generic/ioctls.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -18,7 +18,7 @@
 #include "crossbar-ts7970.h"
 #include "crossbar-ts7990.h"
 
-static twifd;
+static int twifd;
 
 int get_model()
 {
@@ -32,7 +32,8 @@ int get_model()
 		perror("model");
 		return 0;
 	}
-	fread(mdl, 256, 1, proc);
+	ret = fread(mdl, 256, 1, proc);
+	if(ret <= 0) return 0;
 	ptr = strstr(mdl, "TS-");
 	return strtoull(ptr+3, NULL, 16);
 }
