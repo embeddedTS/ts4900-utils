@@ -32,8 +32,7 @@ int get_model()
 		perror("model");
 		return 0;
 	}
-	ret = fread(mdl, 256, 1, proc);
-	if(ret <= 0) return 0;
+	fread(mdl, 256, 1, proc);
 	ptr = strstr(mdl, "TS-");
 	return strtoull(ptr+3, NULL, 16);
 }
