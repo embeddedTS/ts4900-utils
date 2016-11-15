@@ -14,6 +14,7 @@
 #include "i2c-dev.h"
 
 char *model = 0;
+int slaveaddr;
 
 char *get_model()
 {
@@ -37,8 +38,8 @@ int silabs_init()
 	static int fd = -1;
 	fd = open("/dev/i2c-0", O_RDWR);
 	if(fd != -1) {
-		if (ioctl(fd, I2C_SLAVE_FORCE, 0x10) < 0) {
-			perror("FPGA did not ACK 0x10\n");
+		if (ioctl(fd, I2C_SLAVE_FORCE, slaveaddr) < 0) {
+			perror("Silabs did not ACK");
 			return -1;
 		}
 	}
@@ -48,7 +49,7 @@ int silabs_init()
 
 // Scale voltage to silabs 0-2.5V
 uint16_t inline sscale(uint16_t data){
-	return data * 2.5 * 1024/1000;
+	return data * (2.5/1023) * 1000;
 }
 
 // Scale voltage for resistor dividers
@@ -104,9 +105,9 @@ void do_info(int twifd)
 		printf("VDD_HIGH_CAP=%d\n", sscale(data[1]));
 		printf("VDD_SOC_CAP=%d\n",sscale(data[2]));
 		printf("VDD_ARM=%d\n", sscale(data[3]));
-		printf("SILAB_P10=0x%X\n", data[4]);
-		printf("SILAB_P11=0x%X\n", data[5]);
-		printf("SILAB_P12=0x%X\n", data[6]);
+		printf("SILAB_P10_RAW=0x%X\n", data[4]);
+		printf("SILAB_P11_RAW=0x%X\n", data[5]);
+		printf("SILAB_P12_RAW=0x%X\n", data[6]);
 		printf("VIN=%d\n", rscale(data[7], 2870, 147));
 		printf("V5_A=%d\n", rscale(data[8], 147, 107));
 		printf("V3P1=%d\n", rscale(data[9], 499, 499));
@@ -120,6 +121,18 @@ void do_info(int twifd)
 		printf("SILAB_P10_UA=%d\n", cscale(data[4], 110));
 		printf("SILAB_P11_UA=%d\n", cscale(data[5], 110));
 		printf("SILAB_P12_UA=%d\n", cscale(data[6], 110));
+	} else if(strstr(model, "7990")) {
+		printf("VIN=%d\n", rscale(data[0], 2870, 147));
+		printf("5V_A=%d\n", rscale(data[1], 147, 107));
+		printf("AN_LCD_20V=%d\n", rscale(data[2], 121, 1));
+		printf("DDR_1P5V=%d\n", sscale(data[3]));
+		printf("1P8V=%d\n", sscale(data[4]));
+		printf("SUPERCAP=%d\n", rscale(data[5], 100, 22));
+		printf("BACK_LT_RAW=0x%X\n", rscale(data[6], 2870, 147));
+		printf("3P3V=%d\n", rscale(data[7], 499, 499));
+		printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
+		printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
+		printf("SILABREV=%d\n", tmp[31]);
 	}
 }
 
@@ -132,7 +145,7 @@ static void usage(char **argv) {
 	  "  -h, --help            This message\n"
 	  "  -i, --info            Read all Silabs ADC values and rev\n"
 	  "  -s, --sleep <seconds> Put the board in a sleep mode for n seconds\n"
-	  "    All values are returned in mV except the P10 which are raw 12-bit values.\n\n",
+	  "    All values are returned in mV unless otherwise labelled\n\n",
 	  argv[0]
 	);
 }
@@ -155,7 +168,11 @@ int main(int argc, char **argv)
 	}
 
 	model = get_model();
-	if(!strstr(model, "7970")) {
+	if(strstr(model, "7970")) {
+		slaveaddr = 0x10;
+	} else if (strstr(model, "7990")) {
+		slaveaddr = 0x4a;
+	} else {
 		fprintf(stderr, "Not supported on model \"%s\"\n", model);
 		return 1;
 	}
