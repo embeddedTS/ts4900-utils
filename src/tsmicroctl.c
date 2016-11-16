@@ -76,6 +76,17 @@ void do_sleep(int twifd, int seconds)
 	unsigned char dat[4] = {0};
 	int opt_sleepmode = 1; // Legacy mode on new boards
 	int opt_resetswitchwkup = 1;
+	static int touchfd = -1;
+	touchfd = open("/dev/i2c-0", O_RDWR);
+
+	if (ioctl(touchfd, I2C_SLAVE_FORCE, 0x5c) == 0) {
+		dat[0] = 51;
+		dat[1] = 0x1;
+		write(touchfd, &dat, 2);
+		dat[0] = 52;
+		dat[1] = 0xa;
+		write(touchfd, &dat, 2);
+	}
 
 	dat[0]=(0x1 | (opt_resetswitchwkup << 1) |
 	  ((opt_sleepmode-1) << 4) | 1 << 6);
