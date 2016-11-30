@@ -134,13 +134,13 @@ void do_info(int twifd)
 		printf("SILAB_P12_UA=%d\n", cscale(data[6], 110));
 	} else if(strstr(model, "7990")) {
 		printf("VIN=%d\n", rscale(data[0], 2870, 147));
-		printf("5V_A=%d\n", rscale(data[1], 147, 107));
+		printf("V5_A=%d\n", rscale(data[1], 147, 107));
 		printf("AN_LCD_20V=%d\n", rscale(data[2], 121, 1));
 		printf("DDR_1P5V=%d\n", sscale(data[3]));
-		printf("1P8V=%d\n", sscale(data[4]));
+		printf("V1P8=%d\n", sscale(data[4]));
 		printf("SUPERCAP=%d\n", rscale(data[5], 100, 22));
 		printf("BACK_LT_RAW=0x%X\n", rscale(data[6], 2870, 147));
-		printf("3P3V=%d\n", rscale(data[7], 499, 499));
+		printf("V3P3=%d\n", rscale(data[7], 499, 499));
 		printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
 		printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
 		printf("SILABREV=%d\n", tmp[31]);
