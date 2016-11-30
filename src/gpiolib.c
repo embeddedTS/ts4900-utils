@@ -107,6 +107,15 @@ int gpio_export(int gpio)
 	int efd;
 	char buf[50];
 	int gpiofd, ret;
+
+	/* Quick test if it has already been exported */
+	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
+	efd = open(buf, O_WRONLY);
+	if(efd != -1) {
+		close(efd);
+		return 0;
+	}
+
 	efd = open("/sys/class/gpio/export", O_WRONLY);
 
 	if(efd != -1) {
