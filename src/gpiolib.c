@@ -179,18 +179,47 @@ int gpio_write(int gpio, int val)
 	return 1;
 }
 
+int gpio_wait(int gpio)
+{
+	int ret, irqfd = 0;
+	char gpio_irq[64];
+	fd_set fds;
+
+	snprintf(gpio_irq, sizeof(gpio_irq), "/sys/class/gpio/gpio%d/value", gpio);
+	irqfd = open(gpio_irq, O_RDONLY, S_IREAD);
+	if(irqfd == -1) {
+		perror("failed to open gpio");
+		return 1;
+	}
+
+	while (1) {
+		int buf;
+		read(irqfd, &buf, sizeof(buf)); 
+		FD_SET(irqfd, &fds); //add the fd to the set
+		// See if the IRQ has any data available to read
+		ret = select(irqfd + 1, NULL, NULL, &fds, NULL);
+ 
+		if(FD_ISSET(irqfd, &fds))
+		{
+			FD_CLR(irqfd, &fds);  //Remove the filedes from set
+			return 0;
+		}
+	}
+}
+
 #ifdef CTL
 
 static void usage(char **argv) {
 	fprintf(stderr, "Usage: %s [OPTION] ...\n"
 	  "Simple gpio access\n"
 	  "\n"
-	  "  -h, --help             This message\n"
-	  "  -p, --getin <dio>      Returns the input value of n sysfs DIO\n"
-	  "  -e, --setout <dio>     Sets a sysfs DIO output value high\n"
-	  "  -l, --clrout <dio>     Sets a sysfs DIO output value low\n"
-	  "  -d, --ddrout <dio>     Set sysfs DIO to an output\n"
-	  "  -r, --ddrin <dio>      Set sysfs DIO to an input\n\n",
+	  "  -h, --help              This message\n"
+	  "  -p, --getin <dio>       Returns the input value of n sysfs DIO\n"
+	  "  -e, --setout <dio>      Sets a sysfs DIO output value high\n"
+	  "  -l, --clrout <dio>      Sets a sysfs DIO output value low\n"
+	  "  -d, --ddrout <dio>      Set sysfs DIO to an output\n"
+	  "  -w, --waitfor <dio>     Wait for IO to change to the configured edge\n"
+	  "  -r, --ddrin <dio>       Set sysfs DIO to an input\n\n",
 	  argv[0]
 	);
 }
@@ -204,6 +233,7 @@ int main(int argc, char **argv)
 	  { "clrout", 1, 0, 'l' },
 	  { "ddrout", 1, 0, 'd' },
 	  { "ddrin", 1, 0, 'r' },
+	  { "waitfor", 1, 0, 'w' },
 	  { "help", 0, 0, 'h' },
 	  { 0, 0, 0, 0 }
 	};
@@ -213,7 +243,7 @@ int main(int argc, char **argv)
 		return(1);
 	}
 
-	while((c = getopt_long(argc, argv, "p:e:l:d:r:", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "p:e:l:d:r:w:", long_options, NULL)) != -1) {
 		int gpio, i;
 
 		switch(c) {
@@ -221,33 +251,33 @@ int main(int argc, char **argv)
 			gpio = atoi(optarg);
 			gpio_export(gpio);
 			printf("gpio%d=%d\n", gpio, gpio_read(gpio));
-			gpio_unexport(gpio);
 			break;
 		case 'e':
 			gpio = atoi(optarg);
 			gpio_export(gpio);
 			gpio_write(gpio, 1);
-			gpio_unexport(gpio);
 			break;
 		case 'l':
 			gpio = atoi(optarg);
 			gpio_export(gpio);
 			gpio_write(gpio, 0);
-			gpio_unexport(gpio);
 			break;
 		case 'd':
 			gpio = atoi(optarg);
 			gpio_export(gpio);
 			gpio_direction(gpio, 1);
-			gpio_unexport(gpio);
 			break;
 		case 'r':
 			gpio = atoi(optarg);
 			gpio_export(gpio);
 			gpio_direction(gpio, 0);
-			gpio_unexport(gpio);
+			break;
+		case 'w':
+			gpio = atoi(optarg);
+			gpio_wait(gpio);
 			break;
 		case 'h':
+
 		default:
 			usage(argv);
 		}
