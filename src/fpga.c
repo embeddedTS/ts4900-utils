@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <stdint.h>
 
 #include "i2c-dev.h"
