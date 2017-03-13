@@ -22,16 +22,23 @@ int gpio_direction(int gpio, int dir)
 		ret = -1;
 	}
 
+	if(dir == 2 && gpiofd){
+		if (3 != write(gpiofd, "high", 3)) {
+			perror("Couldn't set GPIO direction to out");
+			ret = -2;
+		}
+	}
+
 	if(dir == 1 && gpiofd){
 		if (3 != write(gpiofd, "out", 3)) {
 			perror("Couldn't set GPIO direction to out");
-			ret = -2;
+			ret = -3;
 		}
 	}
 	else if(gpiofd) {
 		if(2 != write(gpiofd, "in", 2)) {
 			perror("Couldn't set GPIO directio to in");
-			ret = -3;
+			ret = -4;
 		}
 	}
 
@@ -70,36 +77,6 @@ int gpio_setedge(int gpio, int rising, int falling)
 	}
 
 	close(gpiofd);
-}
-
-int gpio_select(int gpio)
-{
-	char gpio_irq[64];
-	int ret = 0, buf, irqfd;
-	fd_set fds;
-	FD_ZERO(&fds);
-
-	snprintf(gpio_irq, sizeof(gpio_irq), "/sys/class/gpio/gpio%d/value", gpio);
-	irqfd = open(gpio_irq, O_RDONLY, S_IREAD);
-	if(irqfd < 1) {
-		perror("Couldn't open the value file");
-		return -1;
-	}
-
-	// Read first since there is always an initial status
-	ret = read(irqfd, &buf, sizeof(buf));
-
-	while(1) {
-		FD_SET(irqfd, &fds);
-		ret = select(irqfd + 1, NULL, NULL, &fds, NULL);
-		if(FD_ISSET(irqfd, &fds))
-		{
-			FD_CLR(irqfd, &fds);  //Remove the filedes from set
-			// Clear the junk data in the IRQ file
-			ret = read(irqfd, &buf, sizeof(buf));
-			return 1;
-		}
-	}
 }
 
 int gpio_export(int gpio)
@@ -142,6 +119,21 @@ void gpio_unexport(int gpio)
 	sprintf(buf, "%d", gpio);
 	ret = write(gpiofd, buf, strlen(buf));
 	close(gpiofd);
+}
+
+int gpio_getfd(int gpio)
+{
+	char in[3] = {0, 0, 0};
+	char buf[50];
+	int gpiofd;
+	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
+	gpiofd = open(buf, O_RDWR);
+	if(gpiofd < 0) {
+		fprintf(stderr, "Failed to open gpio %d value\n", gpio);
+		perror("gpio failed");
+	}
+
+	return gpiofd;
 }
 
 int gpio_read(int gpio)
@@ -188,30 +180,33 @@ int gpio_write(int gpio, int val)
 	return 1;
 }
 
-int gpio_wait(int gpio)
+
+int gpio_select(int gpio)
 {
-	int ret, irqfd = 0;
 	char gpio_irq[64];
+	int ret = 0, buf, irqfd;
 	fd_set fds;
+	FD_ZERO(&fds);
 
 	snprintf(gpio_irq, sizeof(gpio_irq), "/sys/class/gpio/gpio%d/value", gpio);
 	irqfd = open(gpio_irq, O_RDONLY, S_IREAD);
-	if(irqfd == -1) {
-		perror("failed to open gpio");
-		return 1;
+	if(irqfd < 1) {
+		perror("Couldn't open the value file");
+		return -1;
 	}
 
-	while (1) {
-		int buf;
-		read(irqfd, &buf, sizeof(buf)); 
-		FD_SET(irqfd, &fds); //add the fd to the set
-		// See if the IRQ has any data available to read
+	// Read first since there is always an initial status
+	ret = read(irqfd, &buf, sizeof(buf));
+
+	while(1) {
+		FD_SET(irqfd, &fds);
 		ret = select(irqfd + 1, NULL, NULL, &fds, NULL);
- 
 		if(FD_ISSET(irqfd, &fds))
 		{
 			FD_CLR(irqfd, &fds);  //Remove the filedes from set
-			return 0;
+			// Clear the junk data in the IRQ file
+			ret = read(irqfd, &buf, sizeof(buf));
+			return 1;
 		}
 	}
 }
@@ -283,7 +278,8 @@ int main(int argc, char **argv)
 			break;
 		case 'w':
 			gpio = atoi(optarg);
-			gpio_wait(gpio);
+			gpio_direction(gpio, 0);
+			gpio_select(gpio);
 			break;
 		case 'h':
 
