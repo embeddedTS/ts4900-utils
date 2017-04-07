@@ -139,6 +139,7 @@ void do_info(int twifd)
 		printf("DDR_1P5V=%d\n", sscale(data[3]));
 		printf("V1P8=%d\n", sscale(data[4]));
 		printf("SUPERCAP=%d\n", rscale(data[5], 100, 22));
+		printf("SUPERCAP_PCT=%d\n", (rscale(data[5], 100, 22)*100)/12000);
 		printf("BACK_LT_RAW=0x%X\n", rscale(data[6], 2870, 147));
 		printf("V3P3=%d\n", rscale(data[7], 499, 499));
 		printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
