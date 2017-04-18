@@ -1,6 +1,6 @@
 bin_SCRIPTS = tssilomon
 
 install-data-am:
-	mkdir -p /etc/systemd/system/
-	cp tssilomon.service /etc/systemd/system/
+	mkdir -p $(DESTDIR)/etc/systemd/system/
+	$(INSTALL) tssilomon.service $(DESTDIR)/etc/systemd/system/
 	systemctl enable tssilomon.service
