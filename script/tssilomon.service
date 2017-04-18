@@ -3,7 +3,7 @@ Description=Monitor TS-SILO supercap voltages and shut down on power failure
  
 [Service]
 Type=simple
-ExecStart=tssilomon
+ExecStart=/usr/bin/tssilomon
  
 [Install]
 WantedBy=multi-user.target
