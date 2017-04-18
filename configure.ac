@@ -28,5 +28,7 @@ AC_TYPE_UINT8_T
 AC_CHECK_FUNCS([strtoull])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
-AC_OUTPUT
+                 src/Makefile
+		 script/Makefile])
+
+AC_OUTPUT()
