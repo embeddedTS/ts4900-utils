@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <string.h>
 
 #ifdef CTL
 #include <getopt.h>
