@@ -1,6 +1,7 @@
 bin_SCRIPTS = tssilomon
 
+SYSTEMDDIR=$(shell pkg-config systemd --variable=systemdsystemunitdir)
+
 install-data-am:
-	mkdir -p $(DESTDIR)/etc/systemd/system/
-	$(INSTALL) tssilomon.service $(DESTDIR)/etc/systemd/system/
+	$(INSTALL) -m 0644 tssilomon.service $(SYSTEMDDIR)
 	systemctl enable tssilomon.service
