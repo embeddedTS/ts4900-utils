@@ -33,8 +33,9 @@ if [ "$MODEL" = "TS-7990" ]; then
 			do eval $(tsmicroctl -i)
 			echo "Supercaps at $SUPERCAP_PCT"
 
-			if [ $SUPERCAP_PCT -le $RESET_PCT ]; 
-				then reboot
+			if [ $SUPERCAP_PCT -le $RESET_PCT ]; then 
+				wall "The script tssilomon has detected main power has been lost!  Shutting down safely to prevent filesystem damage."
+				reboot
 			else
 				sleep .5
 			fi
