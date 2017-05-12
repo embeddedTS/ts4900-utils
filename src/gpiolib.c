@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 
@@ -16,28 +17,31 @@ int gpio_direction(int gpio, int dir)
 	int ret = 0;
 	char buf[50];
 	sprintf(buf, "/sys/class/gpio/gpio%d/direction", gpio);
-	int gpiofd = open(buf, O_WRONLY);
+	int gpiofd = open(buf, O_WRONLY | O_SYNC);
 	if(gpiofd < 0) {
-		perror("Couldn't open IRQ file");
+		perror("Couldn't open direction file");
 		ret = -1;
 	}
 
 	if(dir == 2 && gpiofd){
-		if (3 != write(gpiofd, "high", 3)) {
-			perror("Couldn't set GPIO direction to out");
+		if (4 != write(gpiofd, "high", 4)) {
+			fprintf(stderr, "Couldn't set GPIO %d direction to out/high: %s\n", 
+				gpio,
+				strerror(errno));
 			ret = -2;
 		}
-	}
-
-	if(dir == 1 && gpiofd){
+	} else if(dir == 1 && gpiofd){
 		if (3 != write(gpiofd, "out", 3)) {
-			perror("Couldn't set GPIO direction to out");
+			fprintf(stderr, "Couldn't set GPIO %d direction to out/low: %s\n", 
+				gpio,
+				strerror(errno));
 			ret = -3;
 		}
-	}
-	else if(gpiofd) {
+	} else if(gpiofd) {
 		if(2 != write(gpiofd, "in", 2)) {
-			perror("Couldn't set GPIO directio to in");
+			fprintf(stderr, "Couldn't set GPIO %d direction to in: %s\n", 
+				gpio,
+				strerror(errno));
 			ret = -4;
 		}
 	}
@@ -93,7 +97,7 @@ int gpio_export(int gpio)
 		return 0;
 	}
 
-	efd = open("/sys/class/gpio/export", O_WRONLY);
+	efd = open("/sys/class/gpio/export", O_WRONLY | O_SYNC);
 
 	if(efd != -1) {
 		sprintf(buf, "%d", gpio); 
@@ -115,7 +119,7 @@ void gpio_unexport(int gpio)
 {
 	int gpiofd, ret;
 	char buf[50];
-	gpiofd = open("/sys/class/gpio/unexport", O_WRONLY);
+	gpiofd = open("/sys/class/gpio/unexport", O_WRONLY | O_SYNC);
 	sprintf(buf, "%d", gpio);
 	ret = write(gpiofd, buf, strlen(buf));
 	close(gpiofd);
@@ -127,7 +131,7 @@ int gpio_getfd(int gpio)
 	char buf[50];
 	int gpiofd;
 	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
-	gpiofd = open(buf, O_RDWR);
+	gpiofd = open(buf, O_RDWR | O_SYNC);
 	if(gpiofd < 0) {
 		fprintf(stderr, "Failed to open gpio %d value\n", gpio);
 		perror("gpio failed");
@@ -142,7 +146,7 @@ int gpio_read(int gpio)
 	char buf[50];
 	int nread, gpiofd;
 	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
-	gpiofd = open(buf, O_RDWR);
+	gpiofd = open(buf, O_RDWR | O_SYNC);
 	if(gpiofd < 0) {
 		fprintf(stderr, "Failed to open gpio %d value\n", gpio);
 		perror("gpio failed");
@@ -167,7 +171,7 @@ int gpio_write(int gpio, int val)
 	sprintf(buf, "/sys/class/gpio/gpio%d/value", gpio);
 	gpiofd = open(buf, O_RDWR);
 	if(gpiofd > 0) {
-		snprintf(buf, 2, "%d", val);
+		snprintf(buf, 2, "%d", val ? 1 : 0);
 		ret = write(gpiofd, buf, 2);
 		if(ret < 0) {
 			perror("failed to set gpio");
@@ -179,7 +183,6 @@ int gpio_write(int gpio, int val)
 	}
 	return 1;
 }
-
 
 int gpio_select(int gpio)
 {
