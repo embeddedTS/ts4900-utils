@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
 	model = get_model();
 	fprintf(stderr, "Model: \"%s\"\n", model);
-	if(strstr(model, "7970)")) {
+	if(strstr(model, "7970")) {
 		hardware.init = init_ts7970;
 		hardware.restore =restore_ts7970;
 		hardware.readport = readport_ts7970;
