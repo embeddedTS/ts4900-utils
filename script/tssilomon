@@ -26,8 +26,6 @@ if [ "$MODEL" = "TS-7990" ]; then
 	echo rising > /sys/class/gpio/gpio4/edge
 
 	while true;
-		# This will block until there is an IRQ on POWER_FAIL
-		do gpioctl --waitfor 4
 		# while POWER_FAIL is high, check supercap levels
 		while eval $(gpioctl --getin 4); [ "$gpio4" -eq "1" ];
 			do eval $(tsmicroctl -i)
@@ -41,7 +39,8 @@ if [ "$MODEL" = "TS-7990" ]; then
 				sleep .5
 			fi
 		done
-		sleep .5
+		# This will block until there is an IRQ on POWER_FAIL
+		do gpioctl --waitfor 4
 	done	
 else
 	echo "Supercaps not supported on $MODEL"
