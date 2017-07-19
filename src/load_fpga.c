@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 		hardware.writeport = writeport_ts7970;
 		hardware.sclock = sclock_ts7970;
 		hardware.udelay = 0;
-	} else if(strstr(model, "TPC-7990")) {
+	} else if(strstr(model, "7990")) {
 		hardware.init = init_ts7990;
 		hardware.restore =restore_ts7990;
 		hardware.readport = readport_ts7990;
