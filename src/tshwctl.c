@@ -13,6 +13,7 @@
 #include <linux/types.h>
 #include <math.h>
 
+#include "gpiolib.h"
 #include "fpga.h"
 #include "crossbar-ts4900.h"
 #include "crossbar-ts7970.h"
@@ -138,10 +139,11 @@ void usage(char **argv) {
 		"Usage: %s [OPTIONS] ...\n"
 		"Technologic Systems I2C FPGA Utility\n"
 		"\n"
+		"  -i, --info             Print board revisions\n"
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"
 		"  -v, --poke <value>     Writes the value to the specified address\n"
 		"  -t, --peek             Reads from the specified address\n"
-		"  -i, --mode <8n1>       Used with -a, sets mode like '8n1', '7e2', etc\n"
+		"  -l, --mode <8n1>       Used with -a, sets mode like '8n1', '7e2', etc\n"
 		"  -x, --baud <speed>     Used with -a, sets baud rate for auto485\n"
 		"  -a, --autotxen <uart>  Enables autotxen for supported CPU UARTs\n"
 		"                           Uses baud/mode if set or reads the current\n"
@@ -160,7 +162,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	uint16_t addr = 0x0, val;
-	int opt_addr = 0;
+	int opt_addr = 0, opt_info = 0;
 	int opt_poke = 0, opt_peek = 0, opt_auto485 = 0;
 	int baud = 0;
 	int model;
@@ -173,8 +175,9 @@ int main(int argc, char **argv)
 		{ "addr", 1, 0, 'm' },
 		{ "poke", 1, 0, 'v' },
 		{ "peek", 0, 0, 't' },
+		{ "info", 0, 0, 'i' },
 		{ "baud", 1, 0, 'x' },
-		{ "mode", 1, 0, 'i' },
+		{ "mode", 1, 0, 'l' },
 		{ "autotxen", 1, 0, 'a' },
 		{ "get", 0, 0, 'g' },
 		{ "set", 0, 0, 's' },
@@ -211,7 +214,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while((c = getopt_long(argc, argv, "+m:v:i:x:ta:cgsqh", long_options, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "+m:v:il:x:ta:cgsqh", long_options, NULL)) != -1) {
 		int gpiofd;
 		int gpio, i;
 		int uart;
@@ -226,7 +229,7 @@ int main(int argc, char **argv)
 			opt_poke = 1;
 			pokeval = strtoull(optarg, NULL, 0);
 			break;
-		case 'i':
+		case 'l':
 			uartmode = strdup(optarg);
 			break;
 		case 'x':
@@ -234,6 +237,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			opt_peek = 1;
+			break;
+		case 'i':
+			opt_info = 1;
 			break;
 		case 'a':
 			opt_auto485 = atoi(optarg);
@@ -321,6 +327,101 @@ int main(int argc, char **argv)
 		default:
 			usage(argv);
 		}
+	}
+
+	if(opt_info) {
+		uint8_t fpgarev = 0;
+		char pcbrev = 0;
+		uint8_t boardopt = 0;
+
+		if(model == 0x4900) {
+			uint8_t val;
+
+			val = fpeek8(twifd, 51);
+			fpgarev = (val >> 4) & 0xf;
+			printf("n14=%d\n", !(val & 0x1));
+			printf("l14=%d\n", !(val & 0x2));
+			printf("g1=%d\n", !(val & 0x4));
+			printf("b1=%d\n", !(val & 0x8));
+
+			gpio_export(43);
+			gpio_export(165);
+			gpio_direction(43, 0);
+			gpio_direction(165, 0);
+			if(gpio_read(43)) {
+				pcbrev = 'A';
+			} else {
+				if(gpio_read(165)) {
+					pcbrev = 'C';
+				} else {
+					pcbrev = 'D';
+				}
+			}
+		} else if(model == 0x7970) {
+			uint8_t r39, r37, r36, r34;
+			uint8_t val;
+
+			val = fpeek8(twifd, 51);
+			fpgarev = (val >> 4) & 0xf;
+			r34 = !(val & 0x1);
+			r36 = !(val & 0x2);
+			r37 = !(val & 0x4);
+			r39 = !(val & 0x8);
+			boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
+
+			gpio_export(193);
+			gpio_export(192);
+			gpio_direction(193, 0);
+			gpio_direction(192, 0);
+
+			if(gpio_read(193)) {
+				pcbrev = 'A';
+			} else {
+				if(gpio_read(192)) {
+					pcbrev = 'B';
+				} else {
+					pcbrev = 'D';
+				}
+			}			
+		} else if(model == 0x7990) {
+			uint8_t h12, g12, p13, l14;
+			uint8_t val;
+
+			val = fpeek8(twifd, 51);
+			fpgarev = (val >> 4) & 0xf;
+			h12 = !!(val & 0x1);
+			g12 = !!(val & 0x2);
+			l14 = !!(val & 0x4);
+			p13 = !!(val & 0x8);
+			boardopt = l14 | (p13 << 1) | (h12 << 2);
+
+			val = fpeek8(twifd, 57);
+			printf("okaya_present=%d\n", !!(val & 0x8));
+			printf("lxd_present=%d\n", !!(val & 0x10));
+
+			gpio_export(66);
+			gpio_direction(66, 0);
+			if(gpio_read(66) == 1) {
+				pcbrev = 'A';
+			} else {
+				/* Rev < 10 couldn't read build resistors due
+				 * to missing pullups on the fpga, but this
+				 * fpga should only ship with rev b */
+				if(fpgarev < 10) {
+					pcbrev = 'B';
+				} else {
+					if(!g12) {
+						pcbrev = 'B';
+					} else {
+						pcbrev = 'C';
+					}
+				}
+			}
+		}
+		printf("model=%X\n", model);
+		printf("fpgarev=%d\n", fpgarev);
+		printf("pcbrev=%c\n", pcbrev);
+		printf("boardopt=%d\n", boardopt);
 	}
 
 	if(opt_poke) {
