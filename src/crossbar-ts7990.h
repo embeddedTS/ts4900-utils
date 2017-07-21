@@ -39,7 +39,7 @@ struct cbarpin ts7990_inputs[] = {
 	{ 53, "TTYMAX0_CTS" },
 	{ 54, "TTYMAX1_CTS" },
 	{ 55, "TTYMAX2_CTS" },
-	{ 61, "XBEE_TXD" },
+	{ 62, "XBEE_TXD" },
 	{ 0, 0 },
 };
 
