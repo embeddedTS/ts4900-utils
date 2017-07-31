@@ -17,7 +17,7 @@ struct cbarpin ts7990_inputs[] = {
 	{ 11, "TXEN1_485" },
 	{ 12, "TXEN2_485" },
 	{ 16, "BT_CTS" },
-	{ 17, "BT_RXD" },
+	{ 17, "BT_TXD" },
 	{ 18, "TTYMXC1_RXD" },
 	{ 19, "DIO_0" },
 	{ 20, "DIO_1" },
@@ -46,7 +46,7 @@ struct cbarpin ts7990_inputs[] = {
 struct cbarpin ts7990_outputs[] = {
 	{ 0, "UNCHANGED" },
 	{ 1, "BT_RTS" },
-	{ 2, "BT_TXD" },
+	{ 2, "BT_RXD" },
 	{ 3, "TTYMXC4_TXD" },
 	{ 4, "TTYMXC2_TXD" },
 	{ 5, "TTYMXC2_CTS" },
