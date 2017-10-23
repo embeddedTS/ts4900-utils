@@ -363,10 +363,11 @@ int main(int argc, char **argv)
 
 			val = fpeek8(twifd, 51);
 			fpgarev = (val >> 4) & 0xf;
-			r34 = !(val & 0x1);
+			r37 = !(val & 0x1);
 			r36 = !(val & 0x2);
-			r37 = !(val & 0x4);
+			r34 = !(val & 0x4);
 			r39 = !(val & 0x8);
+
 			boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
 
 			gpio_export(193);
