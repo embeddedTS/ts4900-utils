@@ -9,61 +9,64 @@
 #include "ispvm.h"
 
 volatile uint32_t *mx6gpio;
-static unsigned int gpiostate;
 
-#define TDI 1<<16
-#define TCK 1<<11
-#define TMS 1<<8
-#define TDO 1<<12
+#define TDI_BANK 	MX6_GPIO_BANK5
+#define TDI			1<<16
+#define TCK_BANK	MX6_GPIO_BANK5
+#define TCK			1<<11
+#define TMS_BANK	MX6_GPIO_BANK5
+#define TMS			1<<8
+#define TDO_BANK	MX6_GPIO_BANK5
+#define TDO			1<<12
 
 void init_ts7970(void)
 {
 	mx6gpio = gpiofast_init();
 	assert(mx6gpio != 0);
 
-	mx6gpio[(MX6_GPIO_BANK5 + GPGDIR)/4] |= TDI  | TMS | TCK;
-	mx6gpio[(MX6_GPIO_BANK5 + GPGDIR)/4] &= ~(TDO);
+	mx6gpio[(TCK_BANK + GPGDIR)/4] |= TCK;
+	mx6gpio[(TDI_BANK + GPGDIR)/4] |= TDI;
+	mx6gpio[(TMS_BANK + GPGDIR)/4] |= TMS;
+	mx6gpio[(TDO_BANK + GPGDIR)/4] &= ~(TDO);
 
-	mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4] &= ~(TCK);
-	gpiostate = mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4];
+	mx6gpio[(TCK_BANK + GPDR)/4] &= ~(TCK);
+	mx6gpio[(TDI_BANK + GPDR)/4] |= TDI;
+	mx6gpio[(TMS_BANK + GPDR)/4] |= TMS;
 }
 
 void restore_ts7970(void)
 {
-	mx6gpio[(MX6_GPIO_BANK5 + GPGDIR)/4] &= ~(TDI | TCK | TMS);
+	mx6gpio[(TDI_BANK + GPGDIR)/4] &= ~(TDI);
+	mx6gpio[(TCK_BANK + GPGDIR)/4] &= ~(TCK);
+	mx6gpio[(TMS_BANK + GPGDIR)/4] &= ~(TMS);
 }
 
 int readport_ts7970(void)
 {
-	return (mx6gpio[(MX6_GPIO_BANK5 + GPPSR)/4] & TDO) ? 1 : 0;
+	return (mx6gpio[(TDO_BANK + GPPSR)/4] & TDO) ? 1 : 0;
 }
 
 void writeport_ts7970(int pins, int val)
 {
-	gpiostate = mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4];
-
 	if(val) {
 		if(pins & g_ucPinTDI)
-			gpiostate |= TDI;
+			mx6gpio[(TDI_BANK + GPDR)/4] |= TDI;
 		if(pins & g_ucPinTCK)
-			gpiostate |= TCK;
+			mx6gpio[(TCK_BANK + GPDR)/4] |= TCK;
 		if(pins & g_ucPinTMS)
-			gpiostate |= TMS;
+			mx6gpio[(TMS_BANK + GPDR)/4] |= TMS;
 	} else {
 		if(pins & g_ucPinTDI)
-			gpiostate &= ~TDI;
+			mx6gpio[(TDI_BANK + GPDR)/4] &= ~TDI;
 		if(pins & g_ucPinTCK)
-			gpiostate &= ~TCK;
+			mx6gpio[(TCK_BANK + GPDR)/4] &= ~TCK;
 		if(pins & g_ucPinTMS)
-			gpiostate &= ~TMS;
+			mx6gpio[(TMS_BANK + GPDR)/4] &= ~TMS;
 	}
-
-	mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4] = gpiostate;
 }
 
 void sclock_ts7970()
 {
-	assert((gpiostate & TCK) == 0);
-	mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4] |= TCK;
-	mx6gpio[(MX6_GPIO_BANK5 + GPDR)/4] &= ~(TCK);
+	mx6gpio[(TCK_BANK + GPDR)/4] |= TCK;
+	mx6gpio[(TCK_BANK + GPDR)/4] &= ~(TCK);
 }
