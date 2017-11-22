@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -43,8 +42,6 @@ int main(int argc, char **argv)
 	int x;
 	char *model = 0;
 	struct ispvm_f hardware;
-	struct sched_param sp;
-	memset( &sp, 0, sizeof(sp) );
 
 	const char * ispvmerr[] = { "pass", "verification fail",
 	  "can't find the file", "wrong file type", "file error",
@@ -74,9 +71,6 @@ int main(int argc, char **argv)
 		printf("Model \"%s\" not supported\n", model);
 		return 1;
 	}
-
-	sp.sched_priority = 99;
-	sched_setscheduler(0, SCHED_FIFO, &sp);
 
 	x = ispVM(&hardware, argv[1]);
 
