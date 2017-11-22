@@ -5,68 +5,78 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#include "gpiolib-fast.h"
+#include "gpiolib.h"
 #include "ispvm.h"
 
-volatile uint32_t *mx6gpio;
-
-#define TDI_BANK 	MX6_GPIO_BANK5
-#define TDI			1<<16
-#define TCK_BANK	MX6_GPIO_BANK5
-#define TCK			1<<11
-#define TMS_BANK	MX6_GPIO_BANK5
-#define TMS			1<<8
-#define TDO_BANK	MX6_GPIO_BANK5
-#define TDO			1<<12
+#define TS7970_JTAG_TMS 136
+#define TS7970_JTAG_TCK 139
+#define TS7970_JTAG_TDO 140
+#define TS7970_JTAG_TDI 144
 
 void init_ts7970(void)
 {
-	mx6gpio = gpiofast_init();
-	assert(mx6gpio != 0);
+	assert(gpio_export(TS7970_JTAG_TMS) == 0);
+	assert(gpio_export(TS7970_JTAG_TCK) == 0);
+	assert(gpio_export(TS7970_JTAG_TDO) == 0);
+	assert(gpio_export(TS7970_JTAG_TDI) == 0);
 
-	mx6gpio[(TCK_BANK + GPGDIR)/4] |= TCK;
-	mx6gpio[(TDI_BANK + GPGDIR)/4] |= TDI;
-	mx6gpio[(TMS_BANK + GPGDIR)/4] |= TMS;
-	mx6gpio[(TDO_BANK + GPGDIR)/4] &= ~(TDO);
+	tmsfd = gpio_getfd(TS7970_JTAG_TMS);
+	tckfd = gpio_getfd(TS7970_JTAG_TCK);
+	tdofd = gpio_getfd(TS7970_JTAG_TDO);
+	tdifd = gpio_getfd(TS7970_JTAG_TDI);
 
-	mx6gpio[(TCK_BANK + GPDR)/4] &= ~(TCK);
-	mx6gpio[(TDI_BANK + GPDR)/4] |= TDI;
-	mx6gpio[(TMS_BANK + GPDR)/4] |= TMS;
+	assert(tmsfd >= 0);
+	assert(tckfd >= 0);
+	assert(tdofd >= 0);
+	assert(tdifd >= 0);
+
+	gpio_direction(TS7970_JTAG_TCK, 2);
+	gpio_direction(TS7970_JTAG_TDI, 2);
+	gpio_direction(TS7970_JTAG_TMS, 2);
+	gpio_direction(TS7970_JTAG_TDO, 0);
 }
 
 void restore_ts7970(void)
 {
-	mx6gpio[(TDI_BANK + GPGDIR)/4] &= ~(TDI);
-	mx6gpio[(TCK_BANK + GPGDIR)/4] &= ~(TCK);
-	mx6gpio[(TMS_BANK + GPGDIR)/4] &= ~(TMS);
+	gpio_unexport(TS7970_JTAG_TMS);
+	gpio_unexport(TS7970_JTAG_TDI);
+	gpio_unexport(TS7970_JTAG_TCK);
+	gpio_unexport(TS7970_JTAG_TDO);
 }
 
 int readport_ts7970(void)
 {
-	return (mx6gpio[(TDO_BANK + GPPSR)/4] & TDO) ? 1 : 0;
+	//return gpio_read(TS7970_JTAG_TDO);
+	char in;
+	read(tdofd, &in, 1);
+	lseek(tdofd, 0, SEEK_SET);
+	if(in == '1') return 1;
+	return 0;
 }
 
 void writeport_ts7970(int pins, int val)
 {
-	if(val) {
-		if(pins & g_ucPinTDI)
-			mx6gpio[(TDI_BANK + GPDR)/4] |= TDI;
-		if(pins & g_ucPinTCK)
-			mx6gpio[(TCK_BANK + GPDR)/4] |= TCK;
-		if(pins & g_ucPinTMS)
-			mx6gpio[(TMS_BANK + GPDR)/4] |= TMS;
-	} else {
-		if(pins & g_ucPinTDI)
-			mx6gpio[(TDI_BANK + GPDR)/4] &= ~TDI;
-		if(pins & g_ucPinTCK)
-			mx6gpio[(TCK_BANK + GPDR)/4] &= ~TCK;
-		if(pins & g_ucPinTMS)
-			mx6gpio[(TMS_BANK + GPDR)/4] &= ~TMS;
+	uint8_t *buf;
+	if(val) buf = "1";
+	else buf = "0";
+
+	switch (pins) {
+	case g_ucPinTDI:
+		write(tdifd, buf, 1);
+		break;
+	case g_ucPinTCK:
+		write(tckfd, buf, 1);
+		break;
+	case g_ucPinTMS:
+		write(tmsfd, buf, 1);
+		break;
+	default:
+		printf("%s: requested unknown pin\n", __func__);
 	}
 }
 
 void sclock_ts7970()
 {
-	mx6gpio[(TCK_BANK + GPDR)/4] |= TCK;
-	mx6gpio[(TCK_BANK + GPDR)/4] &= ~(TCK);
+	write(tckfd, "1", 1);
+	write(tckfd, "0", 1);
 }

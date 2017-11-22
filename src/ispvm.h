@@ -1,6 +1,11 @@
 #ifndef _ISPVM_H_
 #define _ISPVM_H_
 
+static int tmsfd = -1;
+static int tckfd = -1;
+static int tdofd = -1;
+static int tdifd = -1;
+
 #define g_ucPinTDI 		0x1
 #define g_ucPinTCK 		0x2
 #define g_ucPinTMS 		0x4
