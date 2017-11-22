@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -24,11 +25,26 @@ char *get_model()
 	return strndup(ptr, sz - (mdl - ptr));
 }
 
+void udelay_imx6(unsigned int us)
+{
+	struct timeval start;
+	struct timeval now;
+	uint32_t elapsed = 0;
+
+	gettimeofday(&start, NULL);
+	do {
+		gettimeofday(&now, NULL);
+		elapsed = (now.tv_usec - start.tv_usec);
+	} while(elapsed < us);
+}
+
 int main(int argc, char **argv)
 {
 	int x;
 	char *model = 0;
 	struct ispvm_f hardware;
+	struct sched_param sp;
+	memset( &sp, 0, sizeof(sp) );
 
 	const char * ispvmerr[] = { "pass", "verification fail",
 	  "can't find the file", "wrong file type", "file error",
@@ -46,18 +62,21 @@ int main(int argc, char **argv)
 		hardware.readport = readport_ts7970;
 		hardware.writeport = writeport_ts7970;
 		hardware.sclock = sclock_ts7970;
-		hardware.udelay = 0;
+		hardware.udelay = udelay_imx6;
 	} else if(strstr(model, "7990")) {
 		hardware.init = init_ts7990;
 		hardware.restore =restore_ts7990;
 		hardware.readport = readport_ts7990;
 		hardware.writeport = writeport_ts7990;
 		hardware.sclock = sclock_ts7990;
-		hardware.udelay = 0;
+		hardware.udelay = udelay_imx6;
 	} else {
 		printf("Model \"%s\" not supported\n", model);
 		return 1;
 	}
+
+	sp.sched_priority = 99;
+	sched_setscheduler(0, SCHED_FIFO, &sp);
 
 	x = ispVM(&hardware, argv[1]);
 
