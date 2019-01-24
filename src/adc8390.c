@@ -51,15 +51,15 @@ int adc_init()
 	d = opendir("/sys/bus/i2c/devices/");
 	if (d){
 		while ((dir = readdir(d)) != NULL) {
-			char path[128], busname[128];
+			char path[512], busname[512];
 			int namefd;
-			snprintf(path, 100, "/sys/bus/i2c/devices/%s/name", dir->d_name);
+			snprintf(path, 512, "/sys/bus/i2c/devices/%s/name", dir->d_name);
 			namefd = open(path, O_RDONLY);
 			if(namefd == -1) continue;
 			if(read(namefd, busname, 128) == -1) perror("busname");
 			if(strstr(busname, "adc-i2c") != 0)
 			{
-				snprintf(path, 100, "/dev/%s", dir->d_name);
+				snprintf(path, 512, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
 			}
 		}
@@ -76,9 +76,58 @@ int adc_init()
 	return fd;
 }
 
-int adc_readchannel(int twifd, int channel)
+uint8_t mcp3428_conf(int twifd, uint8_t i2caddr, uint8_t cmd)
 {
-	uint8_t data[3];
+	struct i2c_rdwr_ioctl_data packets;
+	struct i2c_msg msg;
+
+	msg.addr = i2caddr;
+	msg.flags = 0;
+	msg.len	= 1;
+	msg.buf	= (char *)&cmd;
+
+	packets.msgs = &msg;
+	packets.nmsgs = 1;
+
+	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+		perror("Unable to send data");
+		return 1;
+	}
+	return 0;
+}
+
+uint32_t mcp3428_sample(int twifd, uint8_t i2caddr)
+{
+	struct i2c_rdwr_ioctl_data packets;
+	struct i2c_msg msg;
+	uint32_t sample = 0;
+
+	msg.addr = i2caddr;
+	msg.flags = I2C_M_RD;
+	msg.len	= 3;
+	msg.buf	= (char *)&sample;
+
+	packets.msgs = &msg;
+	packets.nmsgs = 1;
+
+	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+		perror("Unable to send data");
+		return 0;
+	}
+
+	if(!(sample & 0x800000))
+		return 0xffffffff;
+
+	// mask out conf bits
+	sample &= 0xffff;
+
+	// Return byte swapped
+	return (sample>>8) | (sample<<8);
+}
+
+uint16_t adc_readchannel(int twifd, int channel)
+{
+	uint32_t data;
 	int chan = 0, ret = 0;
 
 	switch (channel)
@@ -104,51 +153,43 @@ int adc_readchannel(int twifd, int channel)
 		ret = write(anselfd, "1", 1);
 		break;
 	}
+	lseek(anselfd, 0, SEEK_SET);
 
-	ioctl(twifd, I2C_SLAVE, 0x68);
-	i2c_smbus_write_byte(twifd, 0x98 | (chan << 5));
+	mcp3428_conf(twifd, 0x68, 0x78 | (chan << 5));
+
 	usleep(95000);
 	do {
-		i2c_smbus_read_i2c_block_data(twifd, 0x98 | 
-			(chan << 5), 3, data);
-	} while ((data[2] & 0x80) == 0x80);
-	return data[1] | (data[0] << 8);
+		data = mcp3428_sample(twifd, 0x68);
+	} while (data == 0xffffffff);
+
+	return data;
 }
 
-float tov(int raw)
+// Absolute max 18.611V, can sense up to 10.301V.
+uint32_t scale_10v_inputs(uint16_t reg)
 {
-	float mv = raw * 0.000316;
-	return mv;
+	uint32_t val;
+	/* fractions $((8060+2000)) 2000 4096 65536 */
+	val = ((uint32_t)reg * 503)/1600;
+	return val;
+}
+
+// scales to 2.048v in mv
+uint32_t scale_diff_inputs(uint16_t reg)
+{
+	uint32_t val;
+	/* fractions 4096 65536 */
+	val = reg/16;
+	return val;
 }
 
 #ifdef CTL
-
-static void usage(char **argv) {
-	fprintf(stderr, "Usage: %s [OPTION] ...\n"
-	  "Technologic Systems TS-8390 ADC\n"
-	  "\n"
-	  "  -h, --help     This message\n"
-	  "  -r, --read     Read all ADCs once\n"
-	  "  -s, --showraw  Show raw instead of volts\n"
-	  "  	Note: Differential channels always print raw values\n",
-	  	argv[0]
-	);
-}
-
 int main(int argc, char **argv)
 {
 	int twifd, c;
 	int addr = -1;
 	uint8_t data;
 	int temp;
-	int opt_speed = 15;
-	int opt_showraw = 0;
-	static struct option long_options[] = {
-	  { "read", 0, 0, 'r' },
-	  { "showraw", 1, 0, 's' },
-	  { "help", 0, 0, 'h' },
-	  { 0, 0, 0, 0 }
-	};
 
 	twifd = adc_init();
 	if(twifd == -1){
@@ -156,35 +197,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while((c = getopt_long(argc, argv, "hrs", long_options, NULL)) != -1) {
-		switch (c) {
-		case 's':
-			opt_showraw = 1;
-			break;
-		case 'r':
-			if(opt_showraw) {
-				printf("adc0=%d\n", adc_readchannel(twifd, 0));
-				printf("adc1=%d\n", adc_readchannel(twifd, 1));
-				printf("adc2=%d\n", adc_readchannel(twifd, 2));
-				printf("adc3=%d\n", adc_readchannel(twifd, 3));
-				printf("adc4=%d\n", adc_readchannel(twifd, 4));
-				printf("adc5=%d\n", adc_readchannel(twifd, 5));
-			} else {
-				printf("adc0=%d\n", adc_readchannel(twifd, 0));
-				printf("adc1=%d\n", adc_readchannel(twifd, 1));
-				printf("adc2=%.4f\n", tov(adc_readchannel(twifd, 2)));
-				printf("adc3=%.4f\n", tov(adc_readchannel(twifd, 3)));
-				printf("adc4=%.4f\n", tov(adc_readchannel(twifd, 4)));
-				printf("adc5=%.4f\n", tov(adc_readchannel(twifd, 5)));
-			}
-
-			break;
-		case 'h':
-		default:
-			usage(argv);
-			return 1;
-		}
-	}
+	printf("adc0_mv=%d\n", scale_diff_inputs(adc_readchannel(twifd, 0)));
+	printf("adc1_mv=%d\n", scale_diff_inputs(adc_readchannel(twifd, 1)));
+	printf("adc2_mv=%d\n", scale_10v_inputs(adc_readchannel(twifd, 2)));
+	printf("adc3_mv=%d\n", scale_10v_inputs(adc_readchannel(twifd, 3)));
+	printf("adc4_mv=%d\n", scale_10v_inputs(adc_readchannel(twifd, 4)));
+	printf("adc5_mv=%d\n", scale_10v_inputs(adc_readchannel(twifd, 5)));
 
 	close(twifd);
 	return 0;
