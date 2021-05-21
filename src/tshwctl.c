@@ -346,9 +346,14 @@ int main(int argc, char **argv)
 
 			gpio_export(43);
 			gpio_export(165);
+			gpio_export(29);
 			gpio_direction(43, 0);
 			gpio_direction(165, 0);
-			if(gpio_read(43)) {
+			gpio_direction(29, 0);
+
+			if(!gpio_read(29)) {
+				pcbrev = 'E';
+			} else if(gpio_read(43)) {
 				pcbrev = 'A';
 			} else {
 				if(gpio_read(165)) {
