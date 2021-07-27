@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <linux/types.h>
 #include <math.h>
+#include <assert.h>
 
 #include "gpiolib.h"
 #include "fpga.h"
@@ -375,20 +376,40 @@ int main(int argc, char **argv)
 
 			boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
 
-			gpio_export(193);
-			gpio_export(192);
+			gpio_export(193); /* REV B Strap */
+			gpio_export(192); /* REV D Strap */
+			gpio_export(29); /* REV G Strap */
 			gpio_direction(193, 0);
 			gpio_direction(192, 0);
 
-			if(gpio_read(193)) {
-				pcbrev = 'A';
+			if(gpio_read(29) == 0) {
+				pcbrev = 'G';
 			} else {
-				if(gpio_read(192)) {
-					pcbrev = 'B';
-				} else {
-					pcbrev = 'D';
+				int fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
+				char buf[64];
+				uint32_t val;
+				assert(fusefd != 0);
+				int i = read(fusefd, &buf, 64);
+				if(i < 1) {
+					perror("Couldn't read fuses");
+					exit(1);
 				}
-			}			
+				close(fusefd);
+				val = strtoull(buf, NULL, 0);
+				if (val & 0x1) {
+					pcbrev = 'F';
+				} else {
+					if(gpio_read(193)) {
+						pcbrev = 'A';
+					} else {
+						if(gpio_read(192)) {
+							pcbrev = 'B';
+						} else {
+							pcbrev = 'D';
+						}
+					}
+				}
+			}
 		} else if(model == 0x7990) {
 			uint8_t h12, g12, p13, l14;
 			uint8_t val;
