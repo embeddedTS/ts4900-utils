@@ -49,12 +49,12 @@ int silabs_init()
 }
 
 // Scale voltage to silabs 0-2.5V
-uint16_t inline sscale(uint16_t data){
+static uint16_t inline sscale(uint16_t data){
 	return data * (2.5/1023) * 1000;
 }
 
 // Scale voltage for resistor dividers
-uint16_t inline rscale(uint16_t data, uint16_t r1, uint16_t r2)
+static uint16_t inline rscale(uint16_t data, uint16_t r1, uint16_t r2)
 {
 	uint16_t ret = (data * (r1 + r2)/r2);
 	return sscale(ret);
@@ -62,7 +62,7 @@ uint16_t inline rscale(uint16_t data, uint16_t r1, uint16_t r2)
 
 // Scale for 0-20mA current loop
 // shunt in ohms
-uint16_t inline cscale(uint16_t data, uint16_t shunt)
+static uint16_t inline cscale(uint16_t data, uint16_t shunt)
 {
 	uint32_t ret = sscale(data);
 	// Scale to microamps
