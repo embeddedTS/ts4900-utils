@@ -138,7 +138,7 @@ void auto485_en(int uart, int baud, char *mode)
 void usage(char **argv) {
 	fprintf(stderr,
 		"Usage: %s [OPTIONS] ...\n"
-		"Technologic Systems I2C FPGA Utility\n"
+		"embeddedTS I2C FPGA Utility\n"
 		"\n"
 		"  -i, --info             Print board revisions\n"
 		"  -m, --addr <address>   Sets up the address for a peek/poke\n"

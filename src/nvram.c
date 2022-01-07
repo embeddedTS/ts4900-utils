@@ -85,7 +85,7 @@ uint8_t nvram_peek8(int twifd, uint8_t addr)
 
 static void usage(char **argv) {
 	fprintf(stderr, "Usage: %s [OPTION] ...\n"
-	  "Technologic Systems RTC nvram access\n"
+	  "embeddedTS RTC nvram access\n"
 	  "\n"
 	  "  -h, --help            This message\n"
 	  "  -a, --addr=<address>  Set the NVRAM address (0-127)\n"

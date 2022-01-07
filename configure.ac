@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(ts4900-utils, 1.0, mark@embeddedarm.com)
+AC_INIT(ts4900-utils, 1.0, mark@embeddedTS.com)
 AC_CONFIG_SRCDIR([src/tshwctl.c])
 #AC_CONFIG_HEADERS([config.h])
 

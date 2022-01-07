@@ -87,7 +87,7 @@ int rtctemp_read(int twifd)
 
 static void usage(char **argv) {
 	fprintf(stderr, "Usage: %s [OPTION] ...\n"
-	  "Technologic Systems RTC tempsensor access\n"
+	  "embeddedTS RTC tempsensor access\n"
 	  "\n"
 	  "  -h, --help            This message\n"
 	  "  -g, --gettemp         Read the RTC temperature\n",

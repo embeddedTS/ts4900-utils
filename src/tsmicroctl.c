@@ -153,7 +153,7 @@ void do_info(int twifd)
 
 static void usage(char **argv) {
 	fprintf(stderr, "Usage: %s [OPTION] ...\n"
-	  "Technologic Systems Microcontroller Access\n"
+	  "embeddedTS Microcontroller Access\n"
 	  "\n"
 	  "  -h, --help            This message\n"
 	  "  -i, --info            Read all Silabs ADC values and rev\n"
