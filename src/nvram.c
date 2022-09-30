@@ -55,30 +55,54 @@ int nvram_init()
 	return fd;
 }
 
-int nvram_poke8(int twifd, uint8_t addr, uint8_t value)
-{
-	uint8_t data[2];
-
-	data[0] = addr;
-	data[1] = value;
-	if (write(twifd, data, 2) != 2) {
-		perror("nvram write failed");
-		return 1;
-	}
-	return 0;
-}
 
 uint8_t nvram_peek8(int twifd, uint8_t addr)
 {
-	uint8_t data = 0;
+	struct i2c_rdwr_ioctl_data packets;
+	struct i2c_msg msgs[2];
+	char busaddr[2];
+	uint8_t data;
 
-	if (write(twifd, &addr, 1) != 1) {
-		perror("I2C Address set Failed");
+	msgs[0].addr    = 0x57;
+	msgs[0].flags   = 0;
+	msgs[0].len	= 1;
+	msgs[0].buf	= (char *)&addr;
+
+	msgs[1].addr    = 0x57;
+	msgs[1].flags   = I2C_M_RD;
+	msgs[1].len	= 1;
+	msgs[1].buf	= (char *)&data;
+
+	packets.msgs  = msgs;
+	packets.nmsgs = 2;
+
+	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+		perror("Unable to send data");
+		return 1;
 	}
-	if(read(twifd, &data, 1) != 1)
-		perror("nvram read failed");
-
 	return data;
+}
+
+int nvram_poke8(int twifd, uint8_t addr, uint8_t value)
+{
+	struct i2c_rdwr_ioctl_data packets;
+	struct i2c_msg msg;
+	uint8_t data[2];
+	data[0] = addr;
+	data[1] = value;
+
+	msg.addr = 0x57;
+	msg.flags = 0;
+	msg.len	= 2;
+	msg.buf	= (char *)data;
+
+	packets.msgs  = &msg;
+	packets.nmsgs = 1;
+
+	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+		return 1;
+	}
+	return 0;
 }
 
 #ifdef CTL
