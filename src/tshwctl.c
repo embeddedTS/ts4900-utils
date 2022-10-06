@@ -379,10 +379,13 @@ int main(int argc, char **argv)
 			gpio_export(193); /* REV B Strap */
 			gpio_export(192); /* REV D Strap */
 			gpio_export(29); /* REV G Strap */
+			gpio_export(35); /* REV H Strap */
 			gpio_direction(193, 0);
 			gpio_direction(192, 0);
 
-			if(gpio_read(29) == 0) {
+			if(gpio_read(35) == 0)
+				pcbrev = 'H';
+			else if(gpio_read(29) == 0) {
 				pcbrev = 'G';
 			} else {
 				int fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
