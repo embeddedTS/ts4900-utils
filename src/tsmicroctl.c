@@ -34,13 +34,13 @@ char *get_model()
 	return strndup(ptr, sz - (mdl - ptr));
 }
 
-int silabs_init()
+int i2c_microcontroller_init()
 {
 	static int fd = -1;
 	fd = open("/dev/i2c-0", O_RDWR);
 	if(fd != -1) {
 		if (ioctl(fd, I2C_SLAVE_FORCE, slaveaddr) < 0) {
-			perror("Silabs did not ACK");
+			perror("Microcontroller did not ACK");
 			return -1;
 		}
 	}
@@ -48,7 +48,7 @@ int silabs_init()
 	return fd;
 }
 
-// Scale voltage to silabs 0-2.5V
+// Scale voltage to microcontroller 0-2.5V
 static uint16_t inline sscale(uint16_t data){
 	return data * (2.5/1023) * 1000;
 }
@@ -117,9 +117,9 @@ void do_info(int twifd)
 		printf("VDD_HIGH_CAP=%d\n", sscale(data[1]));
 		printf("VDD_SOC_CAP=%d\n",sscale(data[2]));
 		printf("VDD_ARM=%d\n", sscale(data[3]));
-		printf("SILAB_P10_RAW=0x%X\n", data[4]);
-		printf("SILAB_P11_RAW=0x%X\n", data[5]);
-		printf("SILAB_P12_RAW=0x%X\n", data[6]);
+		printf("P10_RAW=0x%X\n", data[4]);
+		printf("P11_RAW=0x%X\n", data[5]);
+		printf("P12_RAW=0x%X\n", data[6]);
 		printf("VIN=%d\n", rscale(data[7], 2870, 147));
 		printf("V5_A=%d\n", rscale(data[8], 147, 107));
 		printf("V3P1=%d\n", rscale(data[9], 499, 499));
@@ -128,11 +128,11 @@ void do_info(int twifd)
 		printf("V1P2=%d\n", sscale(data[12]));
 		printf("RAM_VREF=%d\n", sscale(data[13]));
 		printf("V3P3=%d\n", rscale(data[14], 499, 499));
-		printf("SILABREV=%d\n", data[15]);
+		printf("MICROREV=%d\n", data[15]);
 
-		printf("SILAB_P10_UA=%d\n", cscale(data[4], 110));
-		printf("SILAB_P11_UA=%d\n", cscale(data[5], 110));
-		printf("SILAB_P12_UA=%d\n", cscale(data[6], 110));
+		printf("P10_UA=%d\n", cscale(data[4], 110));
+		printf("P11_UA=%d\n", cscale(data[5], 110));
+		printf("P12_UA=%d\n", cscale(data[6], 110));
 		if (data[15] >= 6) {
 			printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
 				tmp[33], tmp[32], tmp[35], tmp[34], tmp[37], tmp[36]);
@@ -149,7 +149,7 @@ void do_info(int twifd)
 		printf("V3P3=%d\n", rscale(data[7], 499, 499));
 		printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
 		printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
-		printf("SILABREV=%d\n", tmp[31]);
+		printf("MICROREV=%d\n", tmp[31]);
 	}
 }
 
@@ -250,7 +250,7 @@ static void usage(char **argv) {
 	  "embeddedTS Microcontroller Access\n"
 	  "\n"
 	  "  -h, --help            This message\n"
-	  "  -i, --info            Read all Silabs ADC values and rev\n"
+	  "  -i, --info            Read all microcontroller ADC values and rev\n"
 	  "  -s, --sleep <seconds> Put the board in a sleep mode for n seconds\n"
 	  "    All values are returned in mV unless otherwise labeled\n\n",
 	  argv[0]
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	twifd = silabs_init();
+	twifd = i2c_microcontroller_init();
 	if(twifd == -1)
 		return 1;
 
