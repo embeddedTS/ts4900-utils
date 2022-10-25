@@ -4,8 +4,8 @@ nvramctl_CPPFLAGS = -DCTL
 adc8390_SOURCES = adc8390.c adc8390.h
 adc8390_CPPFLAGS = -DCTL
 
-rtctemp_SOURCES = rtctemp.c rtctemp.h
-rtctemp_CPPFLAGS = -DCTL
+isl12020rtc.c_SOURCES = isl12020rtc.c
+isl12020rtc.c_CPPFLAGS = -DCTL
 
 gpioctl_SOURCES = gpiolib.c gpiolib.h
 gpioctl_CPPFLAGS = -DCTL
@@ -22,4 +22,4 @@ tsmicroctl_CPPFLAGS = -DCTL
 tsmicroupdate_SOURCES = tsmicroupdate.c
 tsmicroupdate_CPPFLAGS = -DCTL
 
-bin_PROGRAMS = tshwctl nvramctl gpioctl rtctemp adc8390 load_fpga tsmicroctl tsmicroupdate
+bin_PROGRAMS = tshwctl nvramctl gpioctl rtctemp adc8390 load_fpga tsmicroctl tsmicroupdate isl12020rtc
