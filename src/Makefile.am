@@ -22,4 +22,4 @@ tsmicroctl_CPPFLAGS = -DCTL
 tsmicroupdate_SOURCES = tsmicroupdate.c
 tsmicroupdate_CPPFLAGS = -DCTL
 
-bin_PROGRAMS = tshwctl nvramctl gpioctl rtctemp adc8390 load_fpga tsmicroctl tsmicroupdate isl12020rtc
+bin_PROGRAMS = tshwctl nvramctl gpioctl adc8390 load_fpga tsmicroctl tsmicroupdate isl12020rtc
