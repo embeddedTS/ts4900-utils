@@ -57,7 +57,7 @@ struct micro_update_footer {
         uint8_t misc;
         uint8_t footer_version;
         uint8_t magic[11];
-} __attribute__((__packed__));
+} __attribute__((packed));
 
 static unsigned char const crc8x_table[] = {
 	0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15,
@@ -199,6 +199,7 @@ int32_t main(int argc, char **argv)
 	char *model;
 	uint8_t buf[129];
 	int i2c_fd, bin_fd;
+	off_t full_size;
 	struct stat bin_stat;
 	struct unlock_header hdr;
 	struct micro_update_footer ftr;
@@ -216,7 +217,9 @@ int32_t main(int argc, char **argv)
 	if (bin_fd < 0)
 		error(1, errno, "Error opening binary file");
 
-	lseek(bin_fd, -(sizeof(ftr)), SEEK_END);
+	full_size = lseek(bin_fd, 0, SEEK_END);
+	lseek(bin_fd, full_size - (sizeof(ftr)), SEEK_SET);
+
 	ret = read(bin_fd, &ftr, sizeof(ftr));
 	if(ret != sizeof(ftr))
 		error(1, 0, "footer read failed!");
