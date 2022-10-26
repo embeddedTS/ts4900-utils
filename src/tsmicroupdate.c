@@ -50,6 +50,15 @@ struct unlock_header {
 	uint8_t crc;
 } __attribute__((packed));
 
+struct micro_update_footer {
+        uint32_t bin_size;
+        uint8_t revision;
+        uint8_t flags;
+        uint8_t misc;
+        uint8_t footer_version;
+        uint8_t magic[11];
+} __attribute__((__packed__));
+
 static unsigned char const crc8x_table[] = {
 	0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15,
 	0x38, 0x3F, 0x36, 0x31, 0x24, 0x23, 0x2A, 0x2D,
@@ -190,9 +199,10 @@ int32_t main(int argc, char **argv)
 	char *model;
 	uint8_t buf[129];
 	int i2c_fd, bin_fd;
-	int bin_len;
 	struct stat bin_stat;
 	struct unlock_header hdr;
+	struct micro_update_footer ftr;
+	uint8_t revision;
 	int i;
 	int ret;
 
@@ -206,25 +216,34 @@ int32_t main(int argc, char **argv)
 	if (bin_fd < 0)
 		error(1, errno, "Error opening binary file");
 
-	/* Get file size */
-	fstat(bin_fd, &bin_stat);
-	bin_len = bin_stat.st_size;
+	lseek(bin_fd, -(sizeof(ftr)), SEEK_END);
+	ret = read(bin_fd, &ftr, sizeof(ftr));
+	if(ret != sizeof(ftr))
+		error(1, 0, "footer read failed!");
+
+	if(strncmp("TS_UC_RA4M2", (char *)&ftr.magic, 11) != 0)
+		error(1, 1, "Invalid update file");
+
+	if(ftr.bin_size == 0 || ftr.bin_size > 128*1024)
+		error(1, 1, "Bin size is incorrect");
 
 	/* Check file is 128-byte aligned */
-	if (bin_len & 0x7F)
+	if (ftr.bin_size & 0x7F)
 		error(1, 0, "Binary file must be 128-byte aligned!");
 
 	i2c_fd = open("/dev/i2c-0", O_RDWR);
 	if (i2c_fd < 0)
 		error(1, errno, "Failed to open I2C device");
+		
+	revision = microcontroller_revision(i2c_fd);
 
-	if(microcontroller_revision(i2c_fd) < 7) {
+	if (revision < 7) {
 		fprintf(stderr, "The microconroller must be rev 7 or later to support updates.\n");
 		return 1;
 	}
 	
 	model = get_model();
-	if(!strstr(model, "7970")) {
+	if (!strstr(model, "7970")) {
 		fprintf(stderr, "This update is only supported on the TS-7970\n");
 		return 1;
 	}
@@ -234,9 +253,18 @@ int32_t main(int argc, char **argv)
 		return 1;
 	}
 
+	if(revision == ftr.revision) {
+		printf("Already running FPGA revision %d, not updating\n", revision);
+		return 1;
+	}
+
+	printf("Updating from revision %d to %d\n", revision, ftr.revision);
+
+	lseek(bin_fd, 0, SEEK_SET);
+
 	hdr.magic_key = 0xf092c858;
 	hdr.loc = 0x28000;
-	hdr.len = bin_len;
+	hdr.len = ftr.bin_size;
 	hdr.crc = crc8((uint8_t *)&hdr, (sizeof(struct unlock_header) - 1));
 
 	/* Write magic key and length/location information */
@@ -253,26 +281,26 @@ int32_t main(int argc, char **argv)
 
 	printf("\n");
 	/* Write BIN to MCU via I2C */
-	for (i = bin_len; i; i -= 128) {
-		printf("\r%d/%d", bin_len - i, bin_len);
+	for (i = ftr.bin_size; i; i -= 128) {
+		printf("\r%d/%d", ftr.bin_size - i, ftr.bin_size);
 		fflush(stdout);
 		ret = read(bin_fd, buf, 128);
 		if (ret < 0) {
-			error(1, errno, "Error reading from BIN @ %d", bin_len - i);
+			error(1, errno, "Error reading from BIN @ %d", ftr.bin_size - i);
 		} else if (ret < 128) {
 			error(1, 0, "Short read from BIN! Aborting!");
 		} else {
 			buf[128] = crc8(buf, 128);
 			ret = micro_stream_write(i2c_fd, buf, 129);
 			if (ret)
-				error(1, errno, "Failed to write BIN to I2C @ %d (did uC I2C timeout?)", bin_len - i);
+				error(1, errno, "Failed to write BIN to I2C @ %d (did uC I2C timeout?)", ftr.bin_size - i);
 
 			/* There is some unknown amount of time for a write to complete, its based
 			 * on the current uC clocks and all of that, but 10 microseconds should be
 			 * enough in most cases */
 			usleep(10);
 			do {
-				int ret = micro_stream_read(i2c_fd, buf, 1);
+				ret = micro_stream_read(i2c_fd, buf, 1);
 
 				if(ret == 1)
 					buf[0] = STATUS_WAIT;
