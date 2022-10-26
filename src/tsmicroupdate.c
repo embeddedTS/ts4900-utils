@@ -239,7 +239,7 @@ int32_t main(int argc, char **argv)
 
 	if (revision < 7) {
 		fprintf(stderr, "The microconroller must be rev 7 or later to support updates.\n");
-		return 1;
+		return 0;
 	}
 	
 	model = get_model();
@@ -255,7 +255,7 @@ int32_t main(int argc, char **argv)
 
 	if(revision == ftr.revision) {
 		printf("Already running FPGA revision %d, not updating\n", revision);
-		return 1;
+		return 0;
 	}
 
 	printf("Updating from revision %d to %d\n", revision, ftr.revision);
