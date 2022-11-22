@@ -5,10 +5,19 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 #include "i2c-dev.h"
+
+#define ISL12022_REG_OFF_VAL	0x21
+#define ISL12022_REG_OFF_CTL	0x25
+#define ISL12022_OFF_CTL_APPLY	(1 << 0) /* Make value take affect now */
+#define ISL12022_OFF_CTL_ADD	(1 << 1) /* 1 if the value is add, 0 if subtract */
+#define ISL12022_OFF_CTL_FLASH	(1 << 2) /* 1 to commit to flash, 0 to just ram */
+
 
 int rtc_init()
 {
@@ -51,7 +60,7 @@ int rtc_init()
 	return fd;
 }
 
-void rtc_read(int twifd, uint8_t addr, uint8_t *data, uint8_t len)
+void rtc_read(int twifd, uint8_t addr, void *data, uint8_t len)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msgs[2];
@@ -79,28 +88,27 @@ retry:
 	}
 }
 
-void rtc_write(int twifd, uint8_t addr, uint8_t *data, uint8_t len)
+void rtc_write(int twifd, uint8_t addr, uint8_t data)
 {
 	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg msgs[2];
+	struct i2c_msg msg;
 	int retry = 0;
+	uint8_t tmp[2];
+
+	tmp[0] = addr;
+	tmp[1] = data;
 
 retry:
-	msgs[0].addr    = 0x6f;
-	msgs[0].flags   = 0;
-	msgs[0].len	= 1;
-	msgs[0].buf	= (char *)&addr;
+	msg.addr	= 0x6f;
+	msg.flags	= 0;
+	msg.len		= 2;
+	msg.buf		= (char *)tmp;
 
-	msgs[1].addr    = 0x6f;
-	msgs[1].flags   = 0;
-	msgs[1].len	= len;
-	msgs[1].buf	= (char *)data;
-
-	packets.msgs  = msgs;
-	packets.nmsgs = 2;
+	packets.msgs  = &msg;
+	packets.nmsgs = 1;
 
 	if (ioctl(twifd, I2C_RDWR, &packets) < 0) {
-		perror("Unable to read data");
+		perror("Unable to write data");
 		retry++;
 		if (retry < 10)
 			goto retry;
@@ -166,7 +174,52 @@ void rtc_clear_time_stamp(int twifd)
 
 	rtc_read(twifd, 0x09, &data, 1);
 	data |= (1 << 7); /* CLRTS */
-	rtc_write(twifd, 0x09, &data, 1);
+	rtc_write(twifd, 0x09, data);
+}
+
+int rtc_is_emulated(int twifd)
+{
+	uint8_t data;
+
+	rtc_read(twifd, 0x0f, &data, 1);
+	return !!(data & (1 << 7));
+}
+
+void rtc_offset_set(int twifd, long offset)
+{
+	uint8_t data;
+	uint32_t ppb = labs(offset);
+
+	data = (uint8_t)(ppb >> 0);
+	rtc_write(twifd, ISL12022_REG_OFF_VAL + 0, data);
+	data = (uint8_t)(ppb >> 8);
+	rtc_write(twifd, ISL12022_REG_OFF_VAL + 1, data);
+	data = (uint8_t)(ppb >> 16);
+	rtc_write(twifd, ISL12022_REG_OFF_VAL + 2, data);
+	data = (uint8_t)(ppb >> 24);
+	rtc_write(twifd, ISL12022_REG_OFF_VAL + 3, data);
+
+	data = ISL12022_OFF_CTL_APPLY |
+	       ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) |
+	       ISL12022_OFF_CTL_FLASH;
+	rtc_write(twifd, ISL12022_REG_OFF_CTL, data);
+}
+
+long rtc_offset_get(int twifd)
+{
+	uint8_t data;
+	uint32_t ppb;
+	long offset;
+
+	rtc_read(twifd, ISL12022_REG_OFF_VAL, &ppb, (sizeof(ppb)));
+	rtc_read(twifd, ISL12022_REG_OFF_CTL, &data, 1);
+
+	offset = ppb;
+
+	if ((data & ISL12022_OFF_CTL_ADD) == 0)
+		offset *= -1;
+
+	return offset;
 }
 
 int main(int argc, char **argv)
@@ -180,6 +233,14 @@ int main(int argc, char **argv)
 	if (twifd == -1)
 		return 1;
 
+	/* Set PPM value if specified */
+	if (argc == 2) {
+		float ppm = atof(argv[1]);
+		long ppb = (long)(ppm * 1000 * -1);
+
+		rtc_offset_set(twifd, ppb);
+	}
+
 	temp = rtc_temp_read(twifd);
 	printf("rtctemp_millicelcius=%d\n", temp);
 
@@ -190,6 +251,9 @@ int main(int argc, char **argv)
 	rtc_tsb2v_read(twifd, &tsb2v);
 	strftime(tmbuf, 64, "%m-%d %H:%M:%S", &tsb2v);
 	printf("poweron_utc_timestamp_tsb2v=\"%s\"\n", tmbuf);
+
+	printf("rtc_is_emulated=%d\n", rtc_is_emulated(twifd));
+	printf("offset_ppb=%ld\n", rtc_offset_get(twifd));
 
 	rtc_clear_time_stamp(twifd);
 
