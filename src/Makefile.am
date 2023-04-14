@@ -19,7 +19,4 @@ load_fpga_LDFLAGS = -mcpu=cortex-a9
 tsmicroctl_SOURCES = tsmicroctl.c
 tsmicroctl_CPPFLAGS = -DCTL
 
-tsmicroupdate_SOURCES = tsmicroupdate.c
-tsmicroupdate_CPPFLAGS = -DCTL
-
-bin_PROGRAMS = tshwctl nvramctl gpioctl adc8390 load_fpga tsmicroctl tsmicroupdate isl12020rtc
+bin_PROGRAMS = tshwctl nvramctl gpioctl adc8390 load_fpga tsmicroctl isl12020rtc
