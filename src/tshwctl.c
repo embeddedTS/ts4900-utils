@@ -13,6 +13,8 @@
 #include <linux/types.h>
 #include <math.h>
 #include <assert.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include "gpiolib.h"
 #include "fpga.h"

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
+#include <sys/time.h>
+
 #include "ispvm.h"
 #include "load_fpga-ts7970.h"
 #include "load_fpga-ts7990.h"

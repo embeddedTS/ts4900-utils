@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 #include "gpiolib.h"
