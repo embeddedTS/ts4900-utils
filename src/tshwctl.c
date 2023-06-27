@@ -388,17 +388,33 @@ int main(int argc, char **argv)
 			else if(gpio_read(29) == 0) {
 				pcbrev = 'G';
 			} else {
-				int fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
+				int fusefd;
 				char buf[64];
 				uint32_t val;
-				assert(fusefd != 0);
-				int i = read(fusefd, &buf, 64);
-				if(i < 1) {
-					perror("Couldn't read fuses");
-					exit(1);
+
+				fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
+				if (fusefd != -1) {
+					assert(fusefd != 0);
+					int i = read(fusefd, &buf, 64);
+					if(i < 1) {
+						perror("Couldn't read fuses");
+						exit(1);
+					}
+					val = strtoull(buf, NULL, 0);
+				} else {
+					fusefd = open("/sys/bus/nvmem/devices/imx-ocotp0/nvmem", O_RDONLY);
+					if (fusefd != -1) {
+						/* (0x660-0x400) >> 4 is word 0x23 (GP1) */
+						off_t offset = lseek(fusefd, 0x23*4, SEEK_SET);
+						assert(offset != -1);
+						read(fusefd, &val, sizeof(val));
+					} else {
+						fprintf(stderr, "Fuse driver not enabled, can't detect PCB revision\n");
+						return 1;
+					}
 				}
 				close(fusefd);
-				val = strtoull(buf, NULL, 0);
+
 				if (val & 0x1) {
 					pcbrev = 'F';
 				} else {
