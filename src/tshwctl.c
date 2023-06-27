@@ -1,4 +1,4 @@
-#include <asm-generic/termbits.h>
+#include <asm/termbits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +13,6 @@
 #include <linux/types.h>
 #include <math.h>
 #include <assert.h>
-#include <termios.h>
 #include <unistd.h>
 
 #include "gpiolib.h"
@@ -94,7 +93,10 @@ void auto485_en(int uart, int baud, char *mode)
 		} else if (mode[1] == 'o') tio.c_cflag |= PARENB | PARODD;
 		if(mode[2] == '1') tio.c_cflag &= ~CSTOPB;
 		else if (mode[2] == '2') tio.c_cflag |= CSTOPB;
-		tcsetattr(uartfd, TCSETS2, &tio);
+		if(ioctl(uartfd, TCSETS2, &tio) < 0) {
+			perror("ioctl");
+			exit(1);
+		}
 	}
 
 	// If they didnt specify a mode & baud, 
