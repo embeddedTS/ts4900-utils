@@ -449,8 +449,12 @@ int main(int argc, char **argv)
 			printf("okaya_present=%d\n", !!(val & 0x8));
 			printf("lxd_present=%d\n", !!(val & 0x10));
 
-			gpio_export(66);
+			gpio_export(66); // REV B
+			gpio_export(158); // REV D
+			gpio_export(35); // REV E
 			gpio_direction(66, 0);
+			gpio_direction(158, 0);
+			gpio_direction(35, 0);
 			if(gpio_read(66) == 1) {
 				pcbrev = 'A';
 			} else {
@@ -463,7 +467,15 @@ int main(int argc, char **argv)
 					if(!g12) {
 						pcbrev = 'B';
 					} else {
-						pcbrev = 'C';
+						if (gpio_read(158) == 0) {
+							if (gpio_read(35) == 0) {
+								pcbrev = 'E';
+							} else {
+								pcbrev = 'D';
+							}
+						} else {
+							pcbrev = 'C';
+						}
 					}
 				}
 			}
