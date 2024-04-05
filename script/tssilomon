@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 grep "ts-silo=1" /proc/cmdline > /dev/null 2>&1
 
