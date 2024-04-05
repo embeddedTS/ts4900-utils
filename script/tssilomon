@@ -1,10 +1,8 @@
 #!/bin/sh
 
-grep "ts-silo=1" /proc/cmdline > /dev/null 2>&1
-
-if [ "$?" != 0 ]; then
+if ! grep -qw "ts-silo=1" /proc/cmdline 2>&1; then
 	# Supercaps are not present or turned off
-	exit 1;
+	exit 1
 fi
 
 MODEL=$(cat /proc/device-tree/model | strings | tr ' ' '\n' | grep TS-)
