@@ -7,40 +7,40 @@ fi
 
 MODEL=$(strings /proc/device-tree/model | tr ' ' '\n' | grep TS-)
 
-if [ "$MODEL" = "TS-7990" ]; then
-	# This is extremely conservative, but allows running off 
-	# of caps for ~10-15 seconds
-	RESET_PCT=90
-
-	# Pin 7 of the DIO header will go high if VIN is removed.
-	# We can poll the FPGA pin (GPIO 249), but the CPU GPIO supports interrupts.
-	# Change the FPGA crossbar so FPGA_IRQ_1 outputs the value on DIO_6
-	export FPGA_IRQ_1=DIO_6
-	tshwctl --set
-
-	# export FPGA_IRQ_1/GPIO_4
-	echo 4 > /sys/class/gpio/export
-	echo in > /sys/class/gpio/gpio4/direction
-	echo rising > /sys/class/gpio/gpio4/edge
-
-	while true;
-		# while POWER_FAIL is high, check supercap levels
-		while eval $(gpioctl --getin 4); [ "$gpio4" -eq "1" ];
-			do eval $(tsmicroctl -i)
-			echo "Supercaps at $SUPERCAP_PCT"
-
-			if [ $SUPERCAP_PCT -le $RESET_PCT ]; then 
-				wall "The script tssilomon has detected main power has been lost!  Shutting down safely to prevent filesystem damage."
-				reboot
-				exit
-			else
-				sleep .5
-			fi
-		done
-		# This will block until there is an IRQ on POWER_FAIL
-		do gpioctl --waitfor 4
-	done	
-else
+if [ "$MODEL" != "TS-7990" ]; then
 	echo "Supercaps not supported on $MODEL"
 	exit 1
 fi
+
+# This is extremely conservative, but allows running off 
+# of caps for ~10-15 seconds
+RESET_PCT=90
+
+# Pin 7 of the DIO header will go high if VIN is removed.
+# We can poll the FPGA pin (GPIO 249), but the CPU GPIO supports interrupts.
+# Change the FPGA crossbar so FPGA_IRQ_1 outputs the value on DIO_6
+export FPGA_IRQ_1=DIO_6
+tshwctl --set
+
+# export FPGA_IRQ_1/GPIO_4
+echo 4 > /sys/class/gpio/export
+echo in > /sys/class/gpio/gpio4/direction
+echo rising > /sys/class/gpio/gpio4/edge
+
+while true;
+	# while POWER_FAIL is high, check supercap levels
+	while eval $(gpioctl --getin 4); [ "$gpio4" -eq "1" ];
+		do eval $(tsmicroctl -i)
+		echo "Supercaps at $SUPERCAP_PCT"
+
+		if [ $SUPERCAP_PCT -le $RESET_PCT ]; then 
+			wall "The script tssilomon has detected main power has been lost!  Shutting down safely to prevent filesystem damage."
+			reboot
+			exit
+		else
+			sleep .5
+		fi
+	done
+	# This will block until there is an IRQ on POWER_FAIL
+	do gpioctl --waitfor 4
+done	
