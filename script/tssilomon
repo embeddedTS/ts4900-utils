@@ -12,7 +12,7 @@ if [ "$MODEL" != "TS-7990" ]; then
 	exit 1
 fi
 
-# This is extremely conservative, but allows running off 
+# This is extremely conservative, but allows running off
 # of caps for ~10-15 seconds
 RESET_PCT=90
 
@@ -29,22 +29,23 @@ echo rising > /sys/class/gpio/gpio4/edge
 
 # while POWER_FAIL is high, check supercap levels
 while true ; do
-	eval $(gpioctl --getin 4) # will set $gpio4
+	eval "$(gpioctl --getin 4)" # will set $gpio4
 
-	if [ "$gpio4" -ne "1" ]; then
+	# shellcheck disable=SC2154
+	if [ "${gpio4}" -ne "1" ]; then
 		# This will block until there is an IRQ on POWER_FAIL
 		gpioctl --waitfor 4
 		continue
 	fi
 
-	eval $(tsmicroctl -i) # sets $SUPERCAP_PCT
-	echo "Supercaps at $SUPERCAP_PCT"
+	eval "$(tsmicroctl -i)" # sets $SUPERCAP_PCT
+	echo "Supercaps at ${SUPERCAP_PCT}"
 
-	if [ $SUPERCAP_PCT -le $RESET_PCT ]; then
+	if [ "${SUPERCAP_PCT}" -le ${RESET_PCT} ]; then
 		wall "The script tssilomon has detected main power has been lost!  Shutting down safely to prevent filesystem damage."
 		reboot
 		exit
 	fi
 
 	sleep .5
-done	
+done
