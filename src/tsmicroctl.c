@@ -97,59 +97,76 @@ void do_sleep(int twifd, int seconds)
 	write(twifd, &dat, 4);
 }
 
-void do_info(int twifd)
+uint16_t swap_byte_order(uint16_t value)
 {
-	uint16_t data[19];
-	uint8_t tmp[38];
+	return (value >> 8) | (value << 8);
+}
+
+void do_ts7990_info(int twifd)
+{
+	uint16_t data[16];
 	int i, ret;
 
-	ret = read(twifd, tmp, 38);
+	ret = read(twifd, data, 32);
+	if (ret != 32){
+		printf("I2C Read failed with %d\n", ret);
+		return;
+	}
+	for (i = 0; i <= 10; i++)
+		data[i] = swap_byte_order(data[i]);
+
+	printf("VIN=%d\n", rscale(data[0], 2870, 147));
+	printf("V5_A=%d\n", rscale(data[1], 147, 107));
+	printf("AN_LCD_20V=%d\n", rscale(data[2], 121, 1));
+	printf("DDR_1P5V=%d\n", sscale(data[3]));
+	printf("V1P8=%d\n", sscale(data[4]));
+	printf("SUPERCAP=%d\n", rscale(data[5], 100, 22));
+	printf("SUPERCAP_PCT=%d\n", (rscale(data[5], 100, 22)*100)/12000);
+	printf("BACK_LT_RAW=0x%X\n", rscale(data[6], 2870, 147));
+	printf("V3P3=%d\n", rscale(data[7], 499, 499));
+	printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
+	printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
+	printf("MICROREV=%d\n", data[15] >> 8);
+}
+
+void do_ts7970_info(int twifd)
+{
+	uint16_t data[19];
+	int i, ret;
+
+	ret = read(twifd, data, 19*2);
 
 	if(ret != 38){
 		printf("I2C Read failed with %d\n", ret);
 		return;
 	}
-	for (i = 0; i <= 18; i++)
-		data[i] = (tmp[i*2] << 8) | tmp[(i*2)+1];
+	for (i = 0; i <= 16; i++)
+		data[i] = swap_byte_order(data[i]);
 
-	if(strstr(model, "7970")) {
-		printf("VDD_ARM_CAP=%d\n", sscale(data[0]));
-		printf("VDD_HIGH_CAP=%d\n", sscale(data[1]));
-		printf("VDD_SOC_CAP=%d\n",sscale(data[2]));
-		printf("VDD_ARM=%d\n", sscale(data[3]));
-		printf("P10_RAW=0x%X\n", data[4]);
-		printf("P11_RAW=0x%X\n", data[5]);
-		printf("P12_RAW=0x%X\n", data[6]);
-		printf("VIN=%d\n", rscale(data[7], 2870, 147));
-		printf("V5_A=%d\n", rscale(data[8], 147, 107));
-		printf("V3P1=%d\n", rscale(data[9], 499, 499));
-		printf("DDR_1P5V=%d\n", sscale(data[10]));
-		printf("V1P8=%d\n", sscale(data[11]));
-		printf("V1P2=%d\n", sscale(data[12]));
-		printf("RAM_VREF=%d\n", sscale(data[13]));
-		printf("V3P3=%d\n", rscale(data[14], 499, 499));
-		printf("MICROREV=%d\n", data[15]);
+	printf("VDD_ARM_CAP=%d\n", sscale(data[0]));
+	printf("VDD_HIGH_CAP=%d\n", sscale(data[1]));
+	printf("VDD_SOC_CAP=%d\n",sscale(data[2]));
+	printf("VDD_ARM=%d\n", sscale(data[3]));
+	printf("P10_RAW=0x%X\n", data[4]);
+	printf("P11_RAW=0x%X\n", data[5]);
+	printf("P12_RAW=0x%X\n", data[6]);
+	printf("VIN=%d\n", rscale(data[7], 2870, 147));
+	printf("V5_A=%d\n", rscale(data[8], 147, 107));
+	printf("V3P1=%d\n", rscale(data[9], 499, 499));
+	printf("DDR_1P5V=%d\n", sscale(data[10]));
+	printf("V1P8=%d\n", sscale(data[11]));
+	printf("V1P2=%d\n", sscale(data[12]));
+	printf("RAM_VREF=%d\n", sscale(data[13]));
+	printf("V3P3=%d\n", rscale(data[14], 499, 499));
+	printf("MICROREV=%d\n", data[15]);
 
-		printf("P10_UA=%d\n", cscale(data[4], 110));
-		printf("P11_UA=%d\n", cscale(data[5], 110));
-		printf("P12_UA=%d\n", cscale(data[6], 110));
-		if (data[15] >= 6) {
-			printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
-				tmp[33], tmp[32], tmp[35], tmp[34], tmp[37], tmp[36]);
-		}
-	} else if(strstr(model, "7990")) {
-		printf("VIN=%d\n", rscale(data[0], 2870, 147));
-		printf("V5_A=%d\n", rscale(data[1], 147, 107));
-		printf("AN_LCD_20V=%d\n", rscale(data[2], 121, 1));
-		printf("DDR_1P5V=%d\n", sscale(data[3]));
-		printf("V1P8=%d\n", sscale(data[4]));
-		printf("SUPERCAP=%d\n", rscale(data[5], 100, 22));
-		printf("SUPERCAP_PCT=%d\n", (rscale(data[5], 100, 22)*100)/12000);
-		printf("BACK_LT_RAW=0x%X\n", rscale(data[6], 2870, 147));
-		printf("V3P3=%d\n", rscale(data[7], 499, 499));
-		printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
-		printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
-		printf("MICROREV=%d\n", tmp[31]);
+	printf("P10_UA=%d\n", cscale(data[4], 110));
+	printf("P11_UA=%d\n", cscale(data[5], 110));
+	printf("P12_UA=%d\n", cscale(data[6], 110));
+	if (data[15] >= 6) {
+		uint8_t *mac_bytes = (uint8_t *)&data[16]; // Pointer to MAC bytes in data array
+		printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
+		       mac_bytes[0], mac_bytes[1], mac_bytes[3], mac_bytes[2], mac_bytes[5], mac_bytes[4]);
 	}
 }
 
@@ -293,7 +310,10 @@ int main(int argc, char **argv)
 	while((c = getopt_long(argc, argv, "is:m:h", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'i':
-			do_info(twifd);
+			if(strstr(model, "7970"))
+				do_ts7970_info(twifd);
+			else if (strstr(model, "7990"))
+				do_ts7990_info(twifd);
 			break;
 		case 's':
 			do_sleep(twifd, atoi(optarg));
