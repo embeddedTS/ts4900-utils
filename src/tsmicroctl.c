@@ -92,7 +92,7 @@ static uint16_t inline cscale(uint16_t data, uint16_t shunt)
 	return (uint16_t)ret;
 }
 
-void do_sleep(int twifd, int seconds)
+void do_sleep(int i2cfd, int seconds)
 {
     unsigned char dat[4] = {0};
     int opt_sleepmode = 1; // Legacy mode on new boards
@@ -144,7 +144,7 @@ void do_sleep(int twifd, int seconds)
     msgs[0].addr = 0x5c;
     msgs[0].len = 4;
     msgs[0].buf = (char *)dat;
-    if (ioctl(twifd, I2C_RDWR, &ioctl_data) < 0) {
+    if (ioctl(i2cfd, I2C_RDWR, &ioctl_data) < 0) {
         perror("I2C_RDWR ioctl transaction failed");
     }
 
@@ -156,12 +156,12 @@ uint16_t swap_byte_order(uint16_t value)
 	return (value >> 8) | (value << 8);
 }
 
-void do_ts7990_info(int twifd)
+void do_ts7990_info(int i2cfd)
 {
 	uint16_t data[16];
 	int i, ret;
 
-	ret = read(twifd, data, 32);
+	ret = read(i2cfd, data, 32);
 	if (ret != 32){
 		printf("I2C Read failed with %d\n", ret);
 		return;
@@ -183,12 +183,12 @@ void do_ts7990_info(int twifd)
 	printf("MICROREV=%d\n", data[15] >> 8);
 }
 
-void do_ts7970_info(int twifd)
+void do_ts7970_info(int i2cfd)
 {
 	uint16_t data[19];
 	int i, ret;
 
-	ret = read(twifd, data, 19*2);
+	ret = read(i2cfd, data, 19*2);
 
 	if(ret != 38){
 		printf("I2C Read failed with %d\n", ret);
@@ -274,7 +274,7 @@ uint8_t crc8(uint8_t *input_str, size_t num_bytes)
 	return crc;
 }
 
-void do_mac(int twifd, char *mac_opt)
+void do_mac(int i2cfd, char *mac_opt)
 {
 	int r;
 	uint16_t rev;
@@ -284,7 +284,7 @@ void do_mac(int twifd, char *mac_opt)
 	/* First get the uC rev, attempting to send the MAC address data
 	 * to an older uC rev will cause an erroneous sleep.
 	 */
-	r = read(twifd, buf, 32);
+	r = read(i2cfd, buf, 32);
 	if (r != 32) {
 		printf("Short read of I2C!\n");
 		return;
@@ -302,12 +302,12 @@ void do_mac(int twifd, char *mac_opt)
 		}
 		mac[6] = crc8(mac, 6);
 
-		r = write(twifd, mac, 7);
+		r = write(i2cfd, mac, 7);
 		if (r != 7) {
 			perror("Failed writing mac over i2c");
 		}
 	}
-	r = read(twifd, buf, 38);
+	r = read(i2cfd, buf, 38);
 	if (r != 38) {
 		printf("Short read of I2C!\n");
 		return;
@@ -333,7 +333,7 @@ static void usage(char **argv) {
 int main(int argc, char **argv)
 {
 	int c;
-	int twifd;
+	int i2cfd;
 	char *macptr;
 
 	static struct option long_options[] = {
@@ -359,24 +359,24 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	twifd = i2c_microcontroller_init();
-	if(twifd == -1)
+	i2cfd = i2c_microcontroller_init();
+	if(i2cfd == -1)
 		return 1;
 
 	while((c = getopt_long(argc, argv, "is:m:h", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'i':
 			if(model == 0x7970)
-				do_ts7970_info(twifd);
+				do_ts7970_info(i2cfd);
 			else if (model == 0x7990)
-				do_ts7990_info(twifd);
+				do_ts7990_info(i2cfd);
 			break;
 		case 's':
-			do_sleep(twifd, atoi(optarg));
+			do_sleep(i2cfd, atoi(optarg));
 			break;
 		case 'm':
 			macptr = strdup(optarg);
-			do_mac(twifd, macptr);
+			do_mac(i2cfd, macptr);
 			free(macptr);
 			break;
 		case 'h':

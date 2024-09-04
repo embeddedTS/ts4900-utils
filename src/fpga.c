@@ -54,7 +54,7 @@ int fpga_init()
 }
 
 
-int fpeekstream8(int twifd, uint8_t *data, uint16_t addr, int size)
+int fpeekstream8(int i2cfd, uint8_t *data, uint16_t addr, int size)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msgs[2];
@@ -80,14 +80,14 @@ int fpeekstream8(int twifd, uint8_t *data, uint16_t addr, int size)
 	packets.msgs = msgs;
 	packets.nmsgs = 2;
 
-	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if(ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to read I2C data");
 		return 1;
 	}
 	return 0;
 }
 
-int fpokestream8(int twifd, uint8_t *data, uint16_t addr, int size)
+int fpokestream8(int i2cfd, uint8_t *data, uint16_t addr, int size)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msg;
@@ -109,28 +109,28 @@ int fpokestream8(int twifd, uint8_t *data, uint16_t addr, int size)
 	packets.msgs = &msg;
 	packets.nmsgs = 1;
 
-	if(ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if(ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to send I2C data");
 		return 1;
 	}
 	return 0;
 }
 
-void fpoke8(int twifd, uint16_t addr, uint8_t data)
+void fpoke8(int i2cfd, uint16_t addr, uint8_t data)
 {
 	int ret;
 
-	ret = fpokestream8(twifd, &data, addr, 1);
+	ret = fpokestream8(i2cfd, &data, addr, 1);
 	if (ret) {
 		perror("Failed to write to FPGA");
 	}
 }
 
-uint8_t fpeek8(int twifd, uint16_t addr)
+uint8_t fpeek8(int i2cfd, uint16_t addr)
 {
 	uint8_t data = 0;
 	int ret;
-	ret = fpeekstream8(twifd, &data, addr, 1);
+	ret = fpeekstream8(i2cfd, &data, addr, 1);
 
 	if (ret) {
 		perror("Failed to read from FPGA");

@@ -21,7 +21,7 @@
 #include "crossbar-ts7970.h"
 #include "crossbar-ts7990.h"
 
-static int twifd;
+static int i2cfd;
 
 int get_model()
 {
@@ -151,24 +151,24 @@ void auto485_en(int uart, int baud, char *mode)
 
 	if(uart == 1) {
 		autotx_bitstoclks(symsz, baud, &cnt1, &cnt2);
-		fpoke8(twifd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
-		fpoke8(twifd, 33, (uint8_t)((cnt1 & 0xff00) >> 8));
-		fpoke8(twifd, 34, (uint8_t)(cnt1 & 0xff));
-		fpoke8(twifd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
-		fpoke8(twifd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
-		fpoke8(twifd, 37, (uint8_t)(cnt2 & 0xff));
+		fpoke8(i2cfd, 32, (uint8_t)((cnt1 & 0xff0000) >> 16));
+		fpoke8(i2cfd, 33, (uint8_t)((cnt1 & 0xff00) >> 8));
+		fpoke8(i2cfd, 34, (uint8_t)(cnt1 & 0xff));
+		fpoke8(i2cfd, 35, (uint8_t)((cnt2 & 0xff0000) >> 16));
+		fpoke8(i2cfd, 36, (uint8_t)((cnt2 & 0xff00) >> 8));
+		fpoke8(i2cfd, 37, (uint8_t)(cnt2 & 0xff));
 	} else if (uart == 3) {
 		autotx_bitstoclks(symsz, baud, &cnt1, &cnt2);
-		fpoke8(twifd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
-		fpoke8(twifd, 39, (uint8_t)((cnt1 & 0xff00) >> 8));
-		fpoke8(twifd, 40, (uint8_t)(cnt1 & 0xff));
-		fpoke8(twifd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
-		fpoke8(twifd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
-		fpoke8(twifd, 43, (uint8_t)(cnt2 & 0xff));
+		fpoke8(i2cfd, 38, (uint8_t)((cnt1 & 0xff0000) >> 16));
+		fpoke8(i2cfd, 39, (uint8_t)((cnt1 & 0xff00) >> 8));
+		fpoke8(i2cfd, 40, (uint8_t)(cnt1 & 0xff));
+		fpoke8(i2cfd, 41, (uint8_t)((cnt2 & 0xff0000) >> 16));
+		fpoke8(i2cfd, 42, (uint8_t)((cnt2 & 0xff00) >> 8));
+		fpoke8(i2cfd, 43, (uint8_t)(cnt2 & 0xff));
 	}
 }
 
-int do_ts7990_info(int twifd)
+int do_ts7990_info(int i2cfd)
 {
 	struct gpiod_chip *cpu_chip1 = 0, *cpu_chip2 = 0, *cpu_chip4 = 0;
 	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_e_line = 0;
@@ -180,7 +180,7 @@ int do_ts7990_info(int twifd)
 	int value;
 	int ret = 0;
 
-	val = fpeek8(twifd, 51);
+	val = fpeek8(i2cfd, 51);
 	fpgarev = (val >> 4) & 0xf;
 	h12 = !!(val & 0x1);
 	g12 = !!(val & 0x2);
@@ -188,7 +188,7 @@ int do_ts7990_info(int twifd)
 	p13 = !!(val & 0x8);
 	boardopt = l14 | (p13 << 1) | (h12 << 2);
 
-	val = fpeek8(twifd, 57);
+	val = fpeek8(i2cfd, 57);
 	printf("okaya_present=%d\n", !!(val & 0x8));
 	printf("lxd_present=%d\n", !!(val & 0x10));
 
@@ -291,7 +291,7 @@ cleanup:
 	return ret;
 }
 
-int do_ts7970_info(int twifd)
+int do_ts7970_info(int i2cfd)
 {
 	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip6 = 0;
 	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_g_line = 0, *rev_h_line = 0;
@@ -324,7 +324,7 @@ int do_ts7970_info(int twifd)
 		goto cleanup;
 	}
 
-	val = fpeek8(twifd, 51);
+	val = fpeek8(i2cfd, 51);
 	fpgarev = (val >> 4) & 0xf;
 	r37 = !(val & 0x1);
 	r36 = !(val & 0x2);
@@ -449,7 +449,7 @@ cleanup:
 	return ret;
 }
 
-int do_ts4900_info(int twifd)
+int do_ts4900_info(int i2cfd)
 {
 	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip5 = 0;
 	struct gpiod_line *rev_e_line = 0, *rev_b_line = 0, *rev_d_line = 0;
@@ -459,7 +459,7 @@ int do_ts4900_info(int twifd)
 	int value;
 	int ret = 0;
 
-	val = fpeek8(twifd, 51);
+	val = fpeek8(i2cfd, 51);
 	fpgarev = (val >> 4) & 0xf;
 	printf("n14=%d\n", !(val & 0x1));
 	printf("l14=%d\n", !(val & 0x2));
@@ -605,7 +605,7 @@ int main(int argc, char **argv)
 		{ 0, 0, 0, 0 }
 	};
 
-	twifd = fpga_init();
+	i2cfd = fpga_init();
 	model = get_model();
 	if(model == 0x4900) {
 		cbar_inputs = ts4900_inputs; 
@@ -627,7 +627,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if(twifd == -1) {
+	if(i2cfd == -1) {
 		perror("Can't open FPGA I2C bus");
 		return 1;
 	}
@@ -663,7 +663,7 @@ int main(int argc, char **argv)
 			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
 				int j;
-				uint8_t mode = fpeek8(twifd, cbar_inputs[i].addr) >> (8 - cbar_size);
+				uint8_t mode = fpeek8(i2cfd, cbar_inputs[i].addr) >> (8 - cbar_size);
 				for (j = 0; cbar_outputs[j].name != 0; j++)
 				{
 					if(cbar_outputs[j].addr == mode){
@@ -682,8 +682,8 @@ int main(int argc, char **argv)
 					for (j = 0; cbar_outputs[j].name != 0; j++) {
 						if(strcmp(cbar_outputs[j].name, value) == 0) {
 							int mode = cbar_outputs[j].addr;
-							uint8_t val = fpeek8(twifd, cbar_inputs[i].addr);
-							fpoke8(twifd, cbar_inputs[i].addr, 
+							uint8_t val = fpeek8(i2cfd, cbar_inputs[i].addr);
+							fpoke8(i2cfd, cbar_inputs[i].addr, 
 								   (mode << (8 - cbar_size)) | (val & cbar_mask));
 
 							break;
@@ -701,7 +701,7 @@ int main(int argc, char **argv)
 			printf("%13s (DIR) (VAL) FPGA Output\n", "FPGA Pad");
 			for (i = 0; cbar_inputs[i].name != 0; i++)
 			{
-				uint8_t value = fpeek8(twifd, cbar_inputs[i].addr);
+				uint8_t value = fpeek8(i2cfd, cbar_inputs[i].addr);
 				uint8_t mode = value >> (8 - cbar_size);
 				char *dir = value & 0x1 ? "out" : "in";
 				int val;
@@ -746,17 +746,17 @@ int main(int argc, char **argv)
 
 	if(opt_info) {
 		if (model == 0x4900) {
-			return do_ts4900_info(twifd);
+			return do_ts4900_info(i2cfd);
 		} else if (model == 0x7970) {
-			return do_ts7970_info(twifd);
+			return do_ts7970_info(i2cfd);
 		} else if (model == 0x7990) {
-			return do_ts7990_info(twifd);
+			return do_ts7990_info(i2cfd);
 		}
 	}
 
 	if(opt_poke) {
 		if(opt_addr) {
-			fpoke8(twifd, addr, pokeval);
+			fpoke8(i2cfd, addr, pokeval);
 		} else {
 			fprintf(stderr, "No address specified\n");
 		}
@@ -764,7 +764,7 @@ int main(int argc, char **argv)
 
 	if(opt_peek) {
 		if(opt_addr) {
-			printf("addr%d=0x%X\n", addr, fpeek8(twifd, addr));
+			printf("addr%d=0x%X\n", addr, fpeek8(i2cfd, addr));
 		} else {
 			fprintf(stderr, "No address specified\n");
 		}
@@ -778,7 +778,7 @@ int main(int argc, char **argv)
 		auto485_en(opt_auto485, baud, uartmode);
 	}
 
-	close(twifd);
+	close(i2cfd);
 
 	return 0;
 }

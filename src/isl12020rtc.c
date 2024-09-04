@@ -60,7 +60,7 @@ int rtc_init()
 	return fd;
 }
 
-void rtc_read(int twifd, uint8_t addr, void *data, uint8_t len)
+void rtc_read(int i2cfd, uint8_t addr, void *data, uint8_t len)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msgs[2];
@@ -80,7 +80,7 @@ retry:
 	packets.msgs  = msgs;
 	packets.nmsgs = 2;
 
-	if (ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to read data");
 		retry++;
 		if (retry < 10)
@@ -88,7 +88,7 @@ retry:
 	}
 }
 
-void rtc_write(int twifd, uint8_t addr, uint8_t data)
+void rtc_write(int i2cfd, uint8_t addr, uint8_t data)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msg;
@@ -107,7 +107,7 @@ retry:
 	packets.msgs  = &msg;
 	packets.nmsgs = 1;
 
-	if (ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to write data");
 		retry++;
 		if (retry < 10)
@@ -116,10 +116,10 @@ retry:
 }
 
 /* Return temp n millicelcius */
-int rtc_temp_read(int twifd)
+int rtc_temp_read(int i2cfd)
 {
 	uint8_t data[2];
-	rtc_read(twifd, 0x28, data, 2);
+	rtc_read(i2cfd, 0x28, data, 2);
 
 	/* Convert from Kelvin */
 	return ((data[0]|(data[1]<<8))*500)-273000;
@@ -132,13 +132,13 @@ int bcd_to_decimal(uint8_t bcd)
 	return dec;
 }
 
-void rtc_tsv2b_read(int twifd, struct tm *ts)
+void rtc_tsv2b_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
 	int year;
 
-	rtc_read(twifd, 0x16, data, 5);
+	rtc_read(i2cfd, 0x16, data, 5);
 	time(&now);
   	gmtime_r(&now, ts);
 
@@ -150,13 +150,13 @@ void rtc_tsv2b_read(int twifd, struct tm *ts)
 	/* Year will always match current year! */
 }
 
-void rtc_tsb2v_read(int twifd, struct tm *ts)
+void rtc_tsb2v_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
 	int year;
 
-	rtc_read(twifd, 0x1b, data, 5);
+	rtc_read(i2cfd, 0x1b, data, 5);
 	time(&now);
   	gmtime_r(&now, ts);
 
@@ -168,51 +168,51 @@ void rtc_tsb2v_read(int twifd, struct tm *ts)
 	/* Year will always match current year! */
 }
 
-void rtc_clear_time_stamp(int twifd)
+void rtc_clear_time_stamp(int i2cfd)
 {
 	uint8_t data;
 
-	rtc_read(twifd, 0x09, &data, 1);
+	rtc_read(i2cfd, 0x09, &data, 1);
 	data |= (1 << 7); /* CLRTS */
-	rtc_write(twifd, 0x09, data);
+	rtc_write(i2cfd, 0x09, data);
 }
 
-int rtc_is_emulated(int twifd)
+int rtc_is_emulated(int i2cfd)
 {
 	uint8_t data;
 
-	rtc_read(twifd, 0x0f, &data, 1);
+	rtc_read(i2cfd, 0x0f, &data, 1);
 	return !!(data & (1 << 7));
 }
 
-void rtc_offset_set(int twifd, long offset)
+void rtc_offset_set(int i2cfd, long offset)
 {
 	uint8_t data;
 	uint32_t ppb = labs(offset);
 
 	data = (uint8_t)(ppb >> 0);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 0, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 0, data);
 	data = (uint8_t)(ppb >> 8);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 1, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 1, data);
 	data = (uint8_t)(ppb >> 16);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 2, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 2, data);
 	data = (uint8_t)(ppb >> 24);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 3, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 3, data);
 
 	data = ISL12022_OFF_CTL_APPLY |
 	       ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) |
 	       ISL12022_OFF_CTL_FLASH;
-	rtc_write(twifd, ISL12022_REG_OFF_CTL, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_CTL, data);
 }
 
-long rtc_offset_get(int twifd)
+long rtc_offset_get(int i2cfd)
 {
 	uint8_t data;
 	uint32_t ppb;
 	long offset;
 
-	rtc_read(twifd, ISL12022_REG_OFF_VAL, &ppb, (sizeof(ppb)));
-	rtc_read(twifd, ISL12022_REG_OFF_CTL, &data, 1);
+	rtc_read(i2cfd, ISL12022_REG_OFF_VAL, &ppb, (sizeof(ppb)));
+	rtc_read(i2cfd, ISL12022_REG_OFF_CTL, &data, 1);
 
 	offset = ppb;
 
@@ -224,13 +224,13 @@ long rtc_offset_get(int twifd)
 
 int main(int argc, char **argv)
 {
-	int twifd;
+	int i2cfd;
 	int temp;
 	struct tm tsv2b, tsb2v;
 	char tmbuf[64];
 
-	twifd = rtc_init();
-	if (twifd == -1)
+	i2cfd = rtc_init();
+	if (i2cfd == -1)
 		return 1;
 
 	/* Set PPM value if specified */
@@ -238,25 +238,25 @@ int main(int argc, char **argv)
 		float ppm = atof(argv[1]);
 		long ppb = (long)(ppm * 1000 * -1);
 
-		rtc_offset_set(twifd, ppb);
+		rtc_offset_set(i2cfd, ppb);
 	}
 
-	temp = rtc_temp_read(twifd);
+	temp = rtc_temp_read(i2cfd);
 	printf("rtctemp_millicelcius=%d\n", temp);
 
-	rtc_tsv2b_read(twifd, &tsv2b);
+	rtc_tsv2b_read(i2cfd, &tsv2b);
 	strftime(tmbuf, 64, "%m-%d %H:%M:%S", &tsv2b);
 	printf("poweroff_utc_timestamp_tsv2b=\"%s\"\n", tmbuf);
 
-	rtc_tsb2v_read(twifd, &tsb2v);
+	rtc_tsb2v_read(i2cfd, &tsb2v);
 	strftime(tmbuf, 64, "%m-%d %H:%M:%S", &tsb2v);
 	printf("poweron_utc_timestamp_tsb2v=\"%s\"\n", tmbuf);
 
-	printf("rtc_is_emulated=%d\n", rtc_is_emulated(twifd));
-	printf("offset_ppb=%ld\n", rtc_offset_get(twifd));
+	printf("rtc_is_emulated=%d\n", rtc_is_emulated(i2cfd));
+	printf("offset_ppb=%ld\n", rtc_offset_get(i2cfd));
 
-	rtc_clear_time_stamp(twifd);
+	rtc_clear_time_stamp(i2cfd);
 
-	close(twifd);
+	close(i2cfd);
 	return 0;
 }
