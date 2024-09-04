@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include <linux/types.h>
 #include <math.h>
+#include <gpiod.h>
 #include <assert.h>
 #include <unistd.h>
 
-#include "gpiolib.h"
 #include "fpga.h"
 #include "crossbar-ts4900.h"
 #include "crossbar-ts7970.h"
@@ -25,19 +25,39 @@ static int twifd;
 
 int get_model()
 {
-	FILE *proc;
-	char mdl[256];
-	char *ptr;
-	int ret;
+    int fd;
+    char mdl[256] = {0};  // Ensure the buffer is zero-initialized
+    char *ptr;
+    ssize_t ret;
 
-	proc = fopen("/proc/device-tree/model", "r");
-	if (!proc) {
-		perror("model");
-		return 0;
-	}
-	fread(mdl, 256, 1, proc);
-	ptr = strstr(mdl, "TS-");
-	return strtoull(ptr+3, NULL, 16);
+    // Open the model file using open system call
+    fd = open("/proc/device-tree/model", O_RDONLY);
+    if (fd < 0) {
+        perror("model");
+        return 0;
+    }
+
+    // Read the contents of the model file
+    ret = read(fd, mdl, sizeof(mdl) - 1); // Read up to 255 bytes
+    close(fd); // Close the file after reading
+
+    if (ret < 0) {
+        perror("read");
+        return 0;
+    }
+
+    // Null-terminate the string
+    mdl[ret] = '\0';
+
+    // Find the "TS-" substring
+    ptr = strstr(mdl, "TS-");
+    if (!ptr) {
+        fprintf(stderr, "Unsupported model: %s\n", mdl);
+        return 0;
+    }
+
+    // Convert the number after "TS-" to a hexadecimal value
+    return (int)strtoul(ptr + 3, NULL, 16);
 }
 
 // Calculate the number of 24mhz clocks for a given
@@ -73,6 +93,15 @@ void auto485_en(int uart, int baud, char *mode)
 		uartfd = open("/dev/ttymxc1", O_RDONLY);
 	else if (uart == 3)
 		uartfd = open("/dev/ttymxc3", O_RDONLY);
+	else {
+		fprintf(stderr, "Invalid UART specified\n");
+		exit(1);
+	}
+
+	if (!uartfd) {
+		perror("uart open");
+		exit(1);
+	}
 
 	ioctl(uartfd, TCGETS2, &tio);
 	if(baud != 0 && mode != NULL) {
@@ -139,6 +168,390 @@ void auto485_en(int uart, int baud, char *mode)
 	}
 }
 
+int do_ts7990_info(int twifd)
+{
+	struct gpiod_chip *cpu_chip1 = 0, *cpu_chip2 = 0, *cpu_chip4 = 0;
+	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_e_line = 0;
+	uint8_t h12, g12, p13, l14;
+	uint8_t boardopt;
+	uint8_t fpgarev;
+	char pcbrev;
+	uint8_t val;
+	int value;
+	int ret = 0;
+
+	val = fpeek8(twifd, 51);
+	fpgarev = (val >> 4) & 0xf;
+	h12 = !!(val & 0x1);
+	g12 = !!(val & 0x2);
+	l14 = !!(val & 0x4);
+	p13 = !!(val & 0x8);
+	boardopt = l14 | (p13 << 1) | (h12 << 2);
+
+	val = fpeek8(twifd, 57);
+	printf("okaya_present=%d\n", !!(val & 0x8));
+	printf("lxd_present=%d\n", !!(val & 0x10));
+
+	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
+	if (!cpu_chip1) {
+		perror("chip1: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip2 = gpiod_chip_open("/dev/gpiochip2");
+	if (!cpu_chip2) {
+		perror("chip2: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip4 = gpiod_chip_open("/dev/gpiochip4");
+	if (!cpu_chip4) {
+		perror("chip4: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	rev_b_line = gpiod_chip_get_line(cpu_chip2, 2);
+	rev_d_line = gpiod_chip_get_line(cpu_chip4, 30);
+	rev_e_line = gpiod_chip_get_line(cpu_chip1, 3);
+	if (!rev_b_line || !rev_d_line || !rev_e_line) {
+		perror("gpiod_chip_get_line");
+		ret = 1;
+		goto cleanup;
+	}
+
+	if (gpiod_line_request_input(rev_b_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_e_line, "tshwctl") < 0) {
+		perror("gpiod_line_request_input");
+		ret = 1;
+		goto cleanup;
+	}
+
+	value = gpiod_line_get_value(rev_b_line);
+	if (value < 0) {
+		perror("gpiod_line_get_value");
+		ret = 1;
+		goto cleanup;
+	}
+
+	if (value) {
+		pcbrev = 'A';
+	} else {
+		/* Rev < 10 couldn't read build resistors due
+		 * to missing pullups on the fpga, but this
+		 * fpga should only ship with rev b */
+
+		if(fpgarev < 10 || !g12) {
+			pcbrev = 'B';
+		} else {
+			value = gpiod_line_get_value(rev_d_line);
+			if (value < 0) {
+				perror("gpiod_line_get_value");
+				ret = 1;
+				goto cleanup;
+			}
+
+			if (value == 0) {
+				value = gpiod_line_get_value(rev_e_line);
+				if (value < 0) {
+					perror("gpiod_line_get_value");
+					ret = 1;
+					goto cleanup;
+				}
+
+				if (value == 0) {
+					pcbrev = 'E';
+				} else {
+					pcbrev = 'D';
+				}
+
+			} else {
+				pcbrev = 'C';
+			}
+
+		}
+	}
+
+	printf("model=0x7990\n");
+	printf("fpgarev=%d\n", fpgarev);
+	printf("pcbrev=%c\n", pcbrev);
+	printf("boardopt=%d\n", boardopt);
+
+cleanup:
+	if (cpu_chip1)
+		gpiod_chip_close(cpu_chip1);
+	if (cpu_chip2)
+		gpiod_chip_close(cpu_chip2);
+	if (cpu_chip4)
+		gpiod_chip_close(cpu_chip4);
+
+	return ret;
+}
+
+int do_ts7970_info(int twifd)
+{
+	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip6 = 0;
+	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_g_line = 0, *rev_h_line = 0;
+	uint8_t r39, r37, r36, r34;
+	uint8_t boardopt;
+	uint8_t fpgarev;
+	char pcbrev;
+	uint8_t val;
+	int value;
+	int ret = 0;
+
+	cpu_chip0 = gpiod_chip_open("/dev/gpiochip0");
+	if (!cpu_chip0) {
+		perror("chip0: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
+	if (!cpu_chip1) {
+		perror("chip1: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip6 = gpiod_chip_open("/dev/gpiochip6");
+	if (!cpu_chip6) {
+		perror("chip6: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	val = fpeek8(twifd, 51);
+	fpgarev = (val >> 4) & 0xf;
+	r37 = !(val & 0x1);
+	r36 = !(val & 0x2);
+	r34 = !(val & 0x4);
+	r39 = !(val & 0x8);
+
+	boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
+
+	rev_b_line = gpiod_chip_get_line(cpu_chip6, 1);
+	rev_d_line = gpiod_chip_get_line(cpu_chip6, 0);
+	rev_g_line = gpiod_chip_get_line(cpu_chip0, 29);
+	rev_h_line = gpiod_chip_get_line(cpu_chip1, 3);
+	if (!rev_b_line || !rev_d_line || !rev_g_line || !rev_h_line) {
+		perror("gpiod_chip_get_line");
+		ret = 1;
+		goto cleanup;
+	}
+
+	if (gpiod_line_request_input(rev_b_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_g_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_h_line, "tshwctl") < 0) {
+		perror("gpiod_line_request_input");
+		ret = 1;
+		goto cleanup;
+	}
+
+	value = gpiod_line_get_value(rev_h_line);
+	if (value < 0) {
+		perror("gpiod_line_get_value");
+		ret = 1;
+		goto cleanup;
+	}
+
+	if (value == 0) {
+		pcbrev = 'H';
+	} else {
+		value = gpiod_line_get_value(rev_g_line);
+		if (value < 0) {
+			perror("gpiod_line_get_value");
+			ret = 1;
+			goto cleanup;
+		}
+
+		if (value == 0) {
+			pcbrev = 'G';
+		} else {
+			/* REV F required a fuse to check */
+			int fusefd;
+			char buf[64];
+			uint32_t val;
+
+			fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
+			if (fusefd != -1) {
+				assert(fusefd != 0);
+				int i = read(fusefd, &buf, 64);
+				if(i < 1) {
+					perror("Couldn't read fuses");
+					exit(1);
+				}
+				val = strtoull(buf, NULL, 0);
+			} else {
+				fusefd = open("/sys/bus/nvmem/devices/imx-ocotp0/nvmem", O_RDONLY);
+				if (fusefd != -1) {
+					/* (0x660-0x400) >> 4 is word 0x23 (GP1) */
+					off_t offset = lseek(fusefd, 0x23*4, SEEK_SET);
+					assert(offset != -1);
+					int i = read(fusefd, &val, sizeof(val));
+					if(i < 1) {
+						perror("Couldn't read fuses");
+						exit(1);
+					}
+				} else {
+					fprintf(stderr, "Fuse driver not enabled, can't detect PCB revision\n");
+					return 1;
+				}
+			}
+			close(fusefd);
+
+			if (val & 0x1) {
+				pcbrev = 'F';
+			} else {
+				value = gpiod_line_get_value(rev_b_line);
+				if (value < 0) {
+					perror("gpiod_line_get_value");
+					ret = 1;
+					goto cleanup;
+				}
+
+				if (value) {
+					pcbrev = 'A';
+				} else {
+					value = gpiod_line_get_value(rev_d_line);
+					if (value < 0) {
+						perror("gpiod_line_get_value");
+						ret = 1;
+						goto cleanup;
+					}
+					if (value) {
+						pcbrev = 'B';
+					} else {
+						pcbrev = 'D';
+					}
+				}
+			}
+		}
+	}
+
+	printf("model=0x7970\n");
+	printf("fpgarev=%d\n", fpgarev);
+	printf("pcbrev=%c\n", pcbrev);
+	printf("boardopt=%d\n", boardopt);
+
+cleanup:
+	if (cpu_chip0)
+		gpiod_chip_close(cpu_chip0);
+	if (cpu_chip1)
+		gpiod_chip_close(cpu_chip1);
+	if (cpu_chip6)
+		gpiod_chip_close(cpu_chip6);
+
+	return ret;
+}
+
+int do_ts4900_info(int twifd)
+{
+	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip5 = 0;
+	struct gpiod_line *rev_e_line = 0, *rev_b_line = 0, *rev_d_line = 0;
+	uint8_t fpgarev;
+	char pcbrev;
+	uint8_t val;
+	int value;
+	int ret = 0;
+
+	val = fpeek8(twifd, 51);
+	fpgarev = (val >> 4) & 0xf;
+	printf("n14=%d\n", !(val & 0x1));
+	printf("l14=%d\n", !(val & 0x2));
+	printf("g1=%d\n", !(val & 0x4));
+	printf("b1=%d\n", !(val & 0x8));
+
+	cpu_chip0 = gpiod_chip_open("/dev/gpiochip0");
+	if (!cpu_chip0) {
+		perror("chip0: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
+	if (!cpu_chip1) {
+		perror("chip1: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	cpu_chip5 = gpiod_chip_open("/dev/gpiochip5");
+	if (!cpu_chip5) {
+		perror("chip5: gpiod_chip_open");
+		ret = 1;
+		goto cleanup;
+	}
+
+	rev_b_line = gpiod_chip_get_line(cpu_chip1, 11);
+	rev_d_line = gpiod_chip_get_line(cpu_chip5, 5);
+	rev_e_line = gpiod_chip_get_line(cpu_chip0, 29);
+	if (!rev_d_line || !rev_b_line || !rev_e_line) {
+		perror("gpiod_chip_get_line");
+		ret = 1;
+		goto cleanup;
+	}
+
+	if (gpiod_line_request_input(rev_e_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
+		gpiod_line_request_input(rev_b_line, "tshwctl") < 0) {
+		perror("gpiod_line_request_input");
+		ret = 1;
+		goto cleanup;
+	}
+
+	value = gpiod_line_get_value(rev_e_line);
+	if (value < 0) {
+		perror("gpiod_line_get_value");
+		ret = 1;
+		goto cleanup;
+	}
+	if (!value) {
+		pcbrev = 'E';
+	} else {
+		value = gpiod_line_get_value(rev_b_line);
+		if (value < 0) {
+			perror("gpiod_line_get_value");
+			ret = 1;
+			goto cleanup;
+		}
+		if (value) {
+			pcbrev = 'A';
+		} else {
+			value = gpiod_line_get_value(rev_d_line);
+			if (value < 0) {
+				perror("gpiod_line_get_value");
+				ret = 1;
+				goto cleanup;
+			}
+
+			if (value) {
+				pcbrev = 'C';
+			} else {
+				pcbrev = 'D';
+			}
+		}
+	}
+
+	printf("model=0x4900\n");
+	printf("fpgarev=%d\n", fpgarev);
+	printf("pcbrev=%c\n", pcbrev);
+
+cleanup:
+	if (cpu_chip0)
+		gpiod_chip_close(cpu_chip0);
+	if (cpu_chip1)
+		gpiod_chip_close(cpu_chip1);
+	if (cpu_chip5)
+		gpiod_chip_close(cpu_chip5);
+
+	return ret;
+}
+
 void usage(char **argv) {
 	fprintf(stderr,
 		"Usage: %s [OPTIONS] ...\n"
@@ -166,7 +579,7 @@ void usage(char **argv) {
 int main(int argc, char **argv) 
 {
 	int c;
-	uint16_t addr = 0x0, val;
+	uint16_t addr = 0x0;
 	int opt_addr = 0, opt_info = 0;
 	int opt_poke = 0, opt_peek = 0, opt_auto485 = 0;
 	int baud = 0;
@@ -220,12 +633,9 @@ int main(int argc, char **argv)
 	}
 
 	while((c = getopt_long(argc, argv, "+m:v:il:x:ta:cgsqh", long_options, NULL)) != -1) {
-		int gpiofd;
-		int gpio, i;
-		int uart;
+		int i;
 
 		switch(c) {
-
 		case 'm':
 			opt_addr = 1;
 			addr = strtoull(optarg, NULL, 0);
@@ -335,155 +745,13 @@ int main(int argc, char **argv)
 	}
 
 	if(opt_info) {
-		uint8_t fpgarev = 0;
-		char pcbrev = 0;
-		uint8_t boardopt = 0;
-
-		if(model == 0x4900) {
-			uint8_t val;
-
-			val = fpeek8(twifd, 51);
-			fpgarev = (val >> 4) & 0xf;
-			printf("n14=%d\n", !(val & 0x1));
-			printf("l14=%d\n", !(val & 0x2));
-			printf("g1=%d\n", !(val & 0x4));
-			printf("b1=%d\n", !(val & 0x8));
-
-			gpio_export(43);
-			gpio_export(165);
-			gpio_export(29);
-			gpio_direction(43, 0);
-			gpio_direction(165, 0);
-			gpio_direction(29, 0);
-
-			if(!gpio_read(29)) {
-				pcbrev = 'E';
-			} else if(gpio_read(43)) {
-				pcbrev = 'A';
-			} else {
-				if(gpio_read(165)) {
-					pcbrev = 'C';
-				} else {
-					pcbrev = 'D';
-				}
-			}
-		} else if(model == 0x7970) {
-			uint8_t r39, r37, r36, r34;
-			uint8_t val;
-
-			val = fpeek8(twifd, 51);
-			fpgarev = (val >> 4) & 0xf;
-			r37 = !(val & 0x1);
-			r36 = !(val & 0x2);
-			r34 = !(val & 0x4);
-			r39 = !(val & 0x8);
-
-			boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
-
-			gpio_export(193); /* REV B Strap */
-			gpio_export(192); /* REV D Strap */
-			gpio_export(29); /* REV G Strap */
-			gpio_export(35); /* REV H Strap */
-			gpio_direction(193, 0);
-			gpio_direction(192, 0);
-
-			if(gpio_read(35) == 0)
-				pcbrev = 'H';
-			else if(gpio_read(29) == 0) {
-				pcbrev = 'G';
-			} else {
-				int fusefd;
-				char buf[64];
-				uint32_t val;
-
-				fusefd = open("/sys/fsl_otp/HW_OCOTP_GP1", O_RDONLY);
-				if (fusefd != -1) {
-					assert(fusefd != 0);
-					int i = read(fusefd, &buf, 64);
-					if(i < 1) {
-						perror("Couldn't read fuses");
-						exit(1);
-					}
-					val = strtoull(buf, NULL, 0);
-				} else {
-					fusefd = open("/sys/bus/nvmem/devices/imx-ocotp0/nvmem", O_RDONLY);
-					if (fusefd != -1) {
-						/* (0x660-0x400) >> 4 is word 0x23 (GP1) */
-						off_t offset = lseek(fusefd, 0x23*4, SEEK_SET);
-						assert(offset != -1);
-						read(fusefd, &val, sizeof(val));
-					} else {
-						fprintf(stderr, "Fuse driver not enabled, can't detect PCB revision\n");
-						return 1;
-					}
-				}
-				close(fusefd);
-
-				if (val & 0x1) {
-					pcbrev = 'F';
-				} else {
-					if(gpio_read(193)) {
-						pcbrev = 'A';
-					} else {
-						if(gpio_read(192)) {
-							pcbrev = 'B';
-						} else {
-							pcbrev = 'D';
-						}
-					}
-				}
-			}
-		} else if(model == 0x7990) {
-			uint8_t h12, g12, p13, l14;
-			uint8_t val;
-
-			val = fpeek8(twifd, 51);
-			fpgarev = (val >> 4) & 0xf;
-			h12 = !!(val & 0x1);
-			g12 = !!(val & 0x2);
-			l14 = !!(val & 0x4);
-			p13 = !!(val & 0x8);
-			boardopt = l14 | (p13 << 1) | (h12 << 2);
-
-			val = fpeek8(twifd, 57);
-			printf("okaya_present=%d\n", !!(val & 0x8));
-			printf("lxd_present=%d\n", !!(val & 0x10));
-
-			gpio_export(66); // REV B
-			gpio_export(158); // REV D
-			gpio_export(35); // REV E
-			gpio_direction(66, 0);
-			gpio_direction(158, 0);
-			gpio_direction(35, 0);
-			if(gpio_read(66) == 1) {
-				pcbrev = 'A';
-			} else {
-				/* Rev < 10 couldn't read build resistors due
-				 * to missing pullups on the fpga, but this
-				 * fpga should only ship with rev b */
-				if(fpgarev < 10) {
-					pcbrev = 'B';
-				} else {
-					if(!g12) {
-						pcbrev = 'B';
-					} else {
-						if (gpio_read(158) == 0) {
-							if (gpio_read(35) == 0) {
-								pcbrev = 'E';
-							} else {
-								pcbrev = 'D';
-							}
-						} else {
-							pcbrev = 'C';
-						}
-					}
-				}
-			}
+		if (model == 0x4900) {
+			return do_ts4900_info(twifd);
+		} else if (model == 0x7970) {
+			return do_ts7970_info(twifd);
+		} else if (model == 0x7990) {
+			return do_ts7990_info(twifd);
 		}
-		printf("model=%X\n", model);
-		printf("fpgarev=%d\n", fpgarev);
-		printf("pcbrev=%c\n", pcbrev);
-		printf("boardopt=%d\n", boardopt);
 	}
 
 	if(opt_poke) {

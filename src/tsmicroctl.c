@@ -14,24 +14,44 @@
 
 #include "i2c-dev.h"
 
-char *model = 0;
+int model = 0;
 int slaveaddr;
 
-char *get_model()
+int get_model()
 {
-	FILE *proc;
-	char mdl[256];
-	char *ptr;
-	int sz;
+    int fd;
+    char mdl[256] = {0};  // Ensure the buffer is zero-initialized
+    char *ptr;
+    ssize_t ret;
 
-	proc = fopen("/proc/device-tree/model", "r");
-	if (!proc) {
-	    perror("model");
-	    return 0;
-	}
-	sz = fread(mdl, 256, 1, proc);
-	ptr = strstr(mdl, "TS-");
-	return strndup(ptr, sz - (mdl - ptr));
+    // Open the model file using open system call
+    fd = open("/proc/device-tree/model", O_RDONLY);
+    if (fd < 0) {
+        perror("model");
+        return 0;
+    }
+
+    // Read the contents of the model file
+    ret = read(fd, mdl, sizeof(mdl) - 1); // Read up to 255 bytes
+    close(fd); // Close the file after reading
+
+    if (ret < 0) {
+        perror("read");
+        return 0;
+    }
+
+    // Null-terminate the string
+    mdl[ret] = '\0';
+
+    // Find the "TS-" substring
+    ptr = strstr(mdl, "TS-");
+    if (!ptr) {
+        fprintf(stderr, "Unsupported model: %s\n", mdl);
+        return 0;
+    }
+
+    // Convert the number after "TS-" to a hexadecimal value
+    return (int)strtoul(ptr + 3, NULL, 16);
 }
 
 int i2c_microcontroller_init()
@@ -74,27 +94,61 @@ static uint16_t inline cscale(uint16_t data, uint16_t shunt)
 
 void do_sleep(int twifd, int seconds)
 {
-	unsigned char dat[4] = {0};
-	int opt_sleepmode = 1; // Legacy mode on new boards
-	int opt_resetswitchwkup = 1;
-	static int touchfd = -1;
-	touchfd = open("/dev/i2c-0", O_RDWR);
+    unsigned char dat[4] = {0};
+    int opt_sleepmode = 1; // Legacy mode on new boards
+    int opt_resetswitchwkup = 1;
+    static int touchfd = -1;
+    struct i2c_rdwr_ioctl_data ioctl_data;
+    struct i2c_msg msgs[1];
+    
+    touchfd = open("/dev/i2c-0", O_RDWR);
+    if (touchfd < 0) {
+        perror("Failed to open i2c device");
+        return;
+    }
 
-	if (ioctl(touchfd, I2C_SLAVE_FORCE, 0x5c) == 0) {
-		dat[0] = 51;
-		dat[1] = 0x1;
-		write(touchfd, &dat, 2);
-		dat[0] = 52;
-		dat[1] = 0xa;
-		write(touchfd, &dat, 2);
+	if (model == 0x7990) {
+		if (ioctl(touchfd, I2C_SLAVE_FORCE, 0x5c) == 0) {
+			/* On the 7990 enable irq on touch controller */
+			dat[0] = 51;
+			dat[1] = 0x1;
+			msgs[0].addr = 0x5c;
+			msgs[0].flags = 0;
+			msgs[0].len = 2;
+			msgs[0].buf = (char *)dat;
+			ioctl_data.msgs = msgs;
+			ioctl_data.nmsgs = 1;
+			if (ioctl(touchfd, I2C_RDWR, &ioctl_data) < 0) {
+				perror("I2C_RDWR ioctl transaction failed");
+			}
+
+			dat[0] = 52;
+			dat[1] = 0xa;
+			msgs[0].len = 2;
+			msgs[0].buf = (char *)dat;
+			if (ioctl(touchfd, I2C_RDWR, &ioctl_data) < 0) {
+				perror("I2C_RDWR ioctl transaction failed");
+			}
+		} else {
+			perror("Failed to set I2C_SLAVE");
+		}
 	}
 
-	dat[0]=(0x1 | (opt_resetswitchwkup << 1) |
-	  ((opt_sleepmode-1) << 4) | 1 << 6);
-	dat[3] = (seconds & 0xff);
-	dat[2] = ((seconds >> 8) & 0xff);
-	dat[1] = ((seconds >> 16) & 0xff);
-	write(twifd, &dat, 4);
+    // Sleep command
+    dat[0] = (0x1 | (opt_resetswitchwkup << 1) |
+              ((opt_sleepmode - 1) << 4) | (1 << 6));
+    dat[3] = (seconds & 0xff);
+    dat[2] = ((seconds >> 8) & 0xff);
+    dat[1] = ((seconds >> 16) & 0xff);
+
+    msgs[0].addr = 0x5c;
+    msgs[0].len = 4;
+    msgs[0].buf = (char *)dat;
+    if (ioctl(twifd, I2C_RDWR, &ioctl_data) < 0) {
+        perror("I2C_RDWR ioctl transaction failed");
+    }
+
+    close(touchfd);
 }
 
 uint16_t swap_byte_order(uint16_t value)
@@ -240,7 +294,7 @@ void do_mac(int twifd, char *mac_opt)
 
 	/* Set the MAC address */
 	if (mac_opt != NULL) {
-		r = sscanf(mac_opt, "%x:%x:%x:%x:%x:%x",
+		r = sscanf(mac_opt, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 		if (r != 6) {
 			printf("MAC address incorrectly formatted\n");
@@ -248,8 +302,10 @@ void do_mac(int twifd, char *mac_opt)
 		}
 		mac[6] = crc8(mac, 6);
 
-		write(twifd, mac, 7);
-
+		r = write(twifd, mac, 7);
+		if (r != 7) {
+			perror("Failed writing mac over i2c");
+		}
 	}
 	r = read(twifd, buf, 38);
 	if (r != 38) {
@@ -294,12 +350,12 @@ int main(int argc, char **argv)
 	}
 
 	model = get_model();
-	if(strstr(model, "7970")) {
+	if (model == 0x7970) {
 		slaveaddr = 0x10;
-	} else if (strstr(model, "7990")) {
+	} else if (model == 0x7990) {
 		slaveaddr = 0x4a;
 	} else {
-		fprintf(stderr, "Not supported on model \"%s\"\n", model);
+		fprintf(stderr, "Not supported on model 0x%X\n", model);
 		return 1;
 	}
 
@@ -310,9 +366,9 @@ int main(int argc, char **argv)
 	while((c = getopt_long(argc, argv, "is:m:h", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'i':
-			if(strstr(model, "7970"))
+			if(model == 0x7970)
 				do_ts7970_info(twifd);
-			else if (strstr(model, "7990"))
+			else if (model == 0x7990)
 				do_ts7990_info(twifd);
 			break;
 		case 's':

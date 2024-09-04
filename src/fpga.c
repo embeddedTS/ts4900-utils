@@ -28,15 +28,15 @@ int fpga_init()
 	d = opendir("/sys/bus/i2c/devices/");
 	if (d){
 		while ((dir = readdir(d)) != NULL) {
-			char path[128], busname[128];
+			char path[512], busname[512];
 			int namefd;
-			snprintf(path, 100, "/sys/bus/i2c/devices/%s/name", dir->d_name);
+			snprintf(path, 512, "/sys/bus/i2c/devices/%s/name", dir->d_name);
 			namefd = open(path, O_RDONLY);
 			if(namefd == -1) continue;
-			if(read(namefd, busname, 128) == -1) perror("busname");
+			if(read(namefd, busname, 512) == -1) perror("busname");
 			if(strncmp(busname, "21a0000.i2c", 11) == 0)
 			{
-				snprintf(path, 100, "/dev/%s", dir->d_name);
+				snprintf(path, 512, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
 			}
 		}

@@ -11,8 +11,11 @@ AM_INIT_AUTOMAKE([1.00 foreign no-define])
 # Checks for programs.
 AC_PROG_CC
 
+PKG_CHECK_MODULES([LIBGPIOD], [libgpiod >= 1.4], [], [
+  AC_MSG_ERROR([libgpiod is required but was not found])
+])
+
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [main])
 
 # Checks for header files.
@@ -30,5 +33,4 @@ AC_CHECK_FUNCS([strtoull])
 AC_CONFIG_FILES([Makefile
                  script/Makefile
                  src/Makefile])
-
 AC_OUTPUT()
