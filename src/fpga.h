@@ -1,8 +1,7 @@
 #ifndef __FPGA_H_
 #define __FPGA_H_
 
-struct cbarpin
-{
+struct cbarpin {
 	int addr;
 	char *name;
 };

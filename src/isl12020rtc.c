@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <dirent.h> 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,12 +12,11 @@
 
 #include "i2c-dev.h"
 
-#define ISL12022_REG_OFF_VAL	0x21
-#define ISL12022_REG_OFF_CTL	0x25
-#define ISL12022_OFF_CTL_APPLY	(1 << 0) /* Make value take affect now */
-#define ISL12022_OFF_CTL_ADD	(1 << 1) /* 1 if the value is add, 0 if subtract */
-#define ISL12022_OFF_CTL_FLASH	(1 << 2) /* 1 to commit to flash, 0 to just ram */
-
+#define ISL12022_REG_OFF_VAL 0x21
+#define ISL12022_REG_OFF_CTL 0x25
+#define ISL12022_OFF_CTL_APPLY (1 << 0) /* Make value take affect now */
+#define ISL12022_OFF_CTL_ADD (1 << 1) /* 1 if the value is add, 0 if subtract */
+#define ISL12022_OFF_CTL_FLASH (1 << 2) /* 1 to commit to flash, 0 to just ram */
 
 int rtc_init()
 {
@@ -25,24 +24,25 @@ int rtc_init()
 	DIR *d;
 	struct dirent *dir;
 
-	if(fd != -1)
+	if (fd != -1)
 		return fd;
 
 	// Depending on which baseboard the TS-4900 is used on there
-	// May be a different number of /dev/i2c-* devices.  This will 
-	// search for the name 21a0000.i2c where the name is the 
+	// May be a different number of /dev/i2c-* devices.  This will
+	// search for the name 21a0000.i2c where the name is the
 	// memory address in the imx6 of the correct i2c bus.
 	d = opendir("/sys/bus/i2c/devices/");
-	if (d){
+	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			char path[512], busname[512];
 			int namefd;
 			snprintf(path, 512, "/sys/bus/i2c/devices/%s/name", dir->d_name);
 			namefd = open(path, O_RDONLY);
-			if(namefd == -1) continue;
-			if(read(namefd, busname, 512) == -1) perror("busname");
-			if(strncmp(busname, "21a0000.i2c", 11) == 0)
-			{
+			if (namefd == -1)
+				continue;
+			if (read(namefd, busname, 512) == -1)
+				perror("busname");
+			if (strncmp(busname, "21a0000.i2c", 11) == 0) {
 				snprintf(path, 512, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
 			}
@@ -67,17 +67,17 @@ void rtc_read(int i2cfd, uint8_t addr, void *data, uint8_t len)
 	int retry = 0;
 
 retry:
-	msgs[0].addr    = 0x6f;
-	msgs[0].flags   = 0;
-	msgs[0].len	= 1;
-	msgs[0].buf	= (char *)&addr;
+	msgs[0].addr = 0x6f;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = (char *)&addr;
 
-	msgs[1].addr    = 0x6f;
-	msgs[1].flags   = I2C_M_RD;
-	msgs[1].len	= len;
-	msgs[1].buf	= (char *)data;
+	msgs[1].addr = 0x6f;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = len;
+	msgs[1].buf = (char *)data;
 
-	packets.msgs  = msgs;
+	packets.msgs = msgs;
 	packets.nmsgs = 2;
 
 	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
@@ -99,12 +99,12 @@ void rtc_write(int i2cfd, uint8_t addr, uint8_t data)
 	tmp[1] = data;
 
 retry:
-	msg.addr	= 0x6f;
-	msg.flags	= 0;
-	msg.len		= 2;
-	msg.buf		= (char *)tmp;
+	msg.addr = 0x6f;
+	msg.flags = 0;
+	msg.len = 2;
+	msg.buf = (char *)tmp;
 
-	packets.msgs  = &msg;
+	packets.msgs = &msg;
 	packets.nmsgs = 1;
 
 	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
@@ -122,7 +122,7 @@ int rtc_temp_read(int i2cfd)
 	rtc_read(i2cfd, 0x28, data, 2);
 
 	/* Convert from Kelvin */
-	return ((data[0]|(data[1]<<8))*500)-273000;
+	return ((data[0] | (data[1] << 8)) * 500) - 273000;
 }
 
 int bcd_to_decimal(uint8_t bcd)
@@ -140,7 +140,7 @@ void rtc_tsv2b_read(int i2cfd, struct tm *ts)
 
 	rtc_read(i2cfd, 0x16, data, 5);
 	time(&now);
-  	gmtime_r(&now, ts);
+	gmtime_r(&now, ts);
 
 	ts->tm_sec = bcd_to_decimal(data[0] & 0x7f);
 	ts->tm_min = bcd_to_decimal(data[1] & 0x7f);
@@ -158,7 +158,7 @@ void rtc_tsb2v_read(int i2cfd, struct tm *ts)
 
 	rtc_read(i2cfd, 0x1b, data, 5);
 	time(&now);
-  	gmtime_r(&now, ts);
+	gmtime_r(&now, ts);
 
 	ts->tm_sec = bcd_to_decimal(data[0] & 0x7f);
 	ts->tm_min = bcd_to_decimal(data[1] & 0x7f);
@@ -199,9 +199,7 @@ void rtc_offset_set(int i2cfd, long offset)
 	data = (uint8_t)(ppb >> 24);
 	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 3, data);
 
-	data = ISL12022_OFF_CTL_APPLY |
-	       ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) |
-	       ISL12022_OFF_CTL_FLASH;
+	data = ISL12022_OFF_CTL_APPLY | ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) | ISL12022_OFF_CTL_FLASH;
 	rtc_write(i2cfd, ISL12022_REG_OFF_CTL, data);
 }
 

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <dirent.h> 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -18,24 +18,25 @@ int fpga_init()
 	DIR *d;
 	struct dirent *dir;
 
-	if(fd != -1)
+	if (fd != -1)
 		return fd;
 
 	// Depending on which baseboard the TS-4900 is used on there
-	// May be a different number of /dev/i2c-* devices.  This will 
-	// search for the name 21a0000.i2c where the name is the 
+	// May be a different number of /dev/i2c-* devices.  This will
+	// search for the name 21a0000.i2c where the name is the
 	// memory address in the imx6 of the correct i2c bus.
 	d = opendir("/sys/bus/i2c/devices/");
-	if (d){
+	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			char path[512], busname[512];
 			int namefd;
 			snprintf(path, 512, "/sys/bus/i2c/devices/%s/name", dir->d_name);
 			namefd = open(path, O_RDONLY);
-			if(namefd == -1) continue;
-			if(read(namefd, busname, 512) == -1) perror("busname");
-			if(strncmp(busname, "21a0000.i2c", 11) == 0)
-			{
+			if (namefd == -1)
+				continue;
+			if (read(namefd, busname, 512) == -1)
+				perror("busname");
+			if (strncmp(busname, "21a0000.i2c", 11) == 0) {
 				snprintf(path, 512, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
 			}
@@ -43,7 +44,7 @@ int fpga_init()
 		closedir(d);
 	}
 
-	if(fd != -1) {
+	if (fd != -1) {
 		if (ioctl(fd, I2C_SLAVE_FORCE, FPGA_ADDR) < 0) {
 			perror("FPGA did not ACK\n");
 			return -1;
@@ -52,7 +53,6 @@ int fpga_init()
 
 	return fd;
 }
-
 
 int fpeekstream8(int i2cfd, uint8_t *data, uint16_t addr, int size)
 {
@@ -64,23 +64,23 @@ int fpeekstream8(int i2cfd, uint8_t *data, uint16_t addr, int size)
 	 * two bytes for the address */
 	assert(size <= 4094);
 
-	busaddr[0]    = ((addr >> 8) & 0xff);
-	busaddr[1]    = (addr & 0xff);
+	busaddr[0] = ((addr >> 8) & 0xff);
+	busaddr[1] = (addr & 0xff);
 
-	msgs[0].addr  = FPGA_ADDR;
+	msgs[0].addr = FPGA_ADDR;
 	msgs[0].flags = 0;
-	msgs[0].len   = 2;
-	msgs[0].buf   = busaddr;
+	msgs[0].len = 2;
+	msgs[0].buf = busaddr;
 
-	msgs[1].addr  = FPGA_ADDR;
+	msgs[1].addr = FPGA_ADDR;
 	msgs[1].flags = I2C_M_RD;
-	msgs[1].len   = size;
-	msgs[1].buf   = (char *)data;
+	msgs[1].len = size;
+	msgs[1].buf = (char *)data;
 
 	packets.msgs = msgs;
 	packets.nmsgs = 2;
 
-	if(ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to read I2C data");
 		return 1;
 	}
@@ -101,15 +101,15 @@ int fpokestream8(int i2cfd, uint8_t *data, uint16_t addr, int size)
 	outdata[1] = (addr & 0xff);
 	memcpy(&outdata[2], data, size);
 
-	msg.addr   = FPGA_ADDR;
-	msg.flags  = 0;
-	msg.len	   = 2 + size;
-	msg.buf	   = (char *)outdata;
+	msg.addr = FPGA_ADDR;
+	msg.flags = 0;
+	msg.len = 2 + size;
+	msg.buf = (char *)outdata;
 
 	packets.msgs = &msg;
 	packets.nmsgs = 1;
 
-	if(ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to send I2C data");
 		return 1;
 	}
