@@ -6,12 +6,12 @@ static int tckfd = -1;
 static int tdofd = -1;
 static int tdifd = -1;
 
-#define g_ucPinTDI 		0x1
-#define g_ucPinTCK 		0x2
-#define g_ucPinTMS 		0x4
-#define g_ucPinTDO 		0x8
-#define g_ucPinENABLE 	0x10
-#define g_ucPinTRST 	0x20
+#define g_ucPinTDI 0x1
+#define g_ucPinTCK 0x2
+#define g_ucPinTMS 0x4
+#define g_ucPinTDO 0x8
+#define g_ucPinENABLE 0x10
+#define g_ucPinTRST 0x20
 
 struct ispvm_f {
 	void (*init)(void);
@@ -22,6 +22,6 @@ struct ispvm_f {
 	void (*udelay)(unsigned int us);
 };
 
-signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename );
+signed char ispVM(struct ispvm_f *callbacks, const char *a_pszFilename);
 
 #endif

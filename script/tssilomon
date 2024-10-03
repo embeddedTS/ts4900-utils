@@ -9,7 +9,7 @@ MODEL=$(strings /proc/device-tree/model | tr ' ' '\n' | grep TS-)
 
 if [ "$MODEL" != "TS-7990" ]; then
 	echo "Supercaps not supported on $MODEL"
-	exit 1
+	exit 0
 fi
 
 # This is extremely conservative, but allows running off
@@ -22,30 +22,35 @@ RESET_PCT=90
 export FPGA_IRQ_1=DIO_6
 tshwctl --set
 
-# export FPGA_IRQ_1/GPIO_4
-echo 4 > /sys/class/gpio/export
-echo in > /sys/class/gpio/gpio4/direction
-echo rising > /sys/class/gpio/gpio4/edge
+# POWER_FAIL is:
+GPIOCHIP="209c000.gpio"
+GPIOLINE="4"
+
+# Check if the GPIO line is valid
+if ! gpioget $GPIOCHIP $GPIOLINE >/dev/null 2>&1; then
+	echo "Failed to get GPIO line $GPIOLINE on chip $GPIOCHIP"
+	exit 1
+fi
 
 # while POWER_FAIL is high, check supercap levels
 while true ; do
-	eval "$(gpioctl --getin 4)" # will set $gpio4
+	# Read the GPIO line (this will set $gpio_value to 0 or 1)
+	gpio_value=$(gpioget $GPIOCHIP $GPIOLINE)
 
-	# shellcheck disable=SC2154
-	if [ "${gpio4}" -ne "1" ]; then
-		# This will block until there is an IRQ on POWER_FAIL
-		gpioctl --waitfor 4
+	if [ "$gpio_value" -ne 1 ]; then
+		sleep .5
 		continue
 	fi
 
+	# Read the supercap percentage
 	eval "$(tsmicroctl -i)" # sets $SUPERCAP_PCT
 	echo "Supercaps at ${SUPERCAP_PCT}"
 
 	if [ "${SUPERCAP_PCT}" -le ${RESET_PCT} ]; then
-		wall "The script tssilomon has detected main power has been lost!  Shutting down safely to prevent filesystem damage."
+		wall "The script tssilomon has detected main power has been lost! Shutting down safely to prevent filesystem damage."
 		reboot
 		exit
 	fi
 
-	sleep .5
+	sleep 0.5
 done

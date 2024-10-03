@@ -43,8 +43,8 @@ struct ispvm_f *hw;
 *
 ***************************************************************/
 
-static unsigned short g_usFlowControl	= 0x0000;
-static unsigned short g_usDataType		= 0x0000;
+static unsigned short g_usFlowControl = 0x0000;
+static unsigned short g_usDataType = 0x0000;
 
 /***************************************************************
 *
@@ -149,9 +149,9 @@ static signed char g_cCurrentJTAGState = 0;
 *
 ***************************************************************/
 
-static unsigned char * g_pucHeapMemory		= NULL;
-static unsigned short g_iHeapCounter		= 0;
-static unsigned short g_iHEAPSize          = 0;
+static unsigned char *g_pucHeapMemory = NULL;
+static unsigned short g_iHeapCounter = 0;
+static unsigned short g_iHEAPSize = 0;
 
 /***************************************************************
 *
@@ -164,8 +164,8 @@ static unsigned short g_iHEAPSize          = 0;
 *
 ***************************************************************/
 
-static unsigned short g_usIntelDataIndex	= 0;
-static unsigned short g_usIntelBufferSize	= 0;
+static unsigned short g_usIntelDataIndex = 0;
+static unsigned short g_usIntelBufferSize = 0;
 
 /****************************************************************************
 *
@@ -174,16 +174,16 @@ static unsigned short g_usIntelBufferSize	= 0;
 *
 *****************************************************************************/
 
-static unsigned short g_usTDOSize      = 0;
-static unsigned short g_usMASKSize		= 0;
-static unsigned short g_usTDISize		= 0;
-static unsigned short g_usDMASKSize    = 0;
-static unsigned short g_usLCOUNTSize   = 0;
-static unsigned short g_usHDRSize		= 0;
-static unsigned short g_usTDRSize		= 0;
-static unsigned short g_usHIRSize		= 0;
-static unsigned short g_usTIRSize		= 0;
-static unsigned short g_usHeapSize		= 0;
+static unsigned short g_usTDOSize = 0;
+static unsigned short g_usMASKSize = 0;
+static unsigned short g_usTDISize = 0;
+static unsigned short g_usDMASKSize = 0;
+static unsigned short g_usLCOUNTSize = 0;
+static unsigned short g_usHDRSize = 0;
+static unsigned short g_usTDRSize = 0;
+static unsigned short g_usHIRSize = 0;
+static unsigned short g_usTIRSize = 0;
+static unsigned short g_usHeapSize = 0;
 
 /***************************************************************
 *
@@ -201,15 +201,9 @@ static unsigned short g_usHeapSize		= 0;
 *
 ***************************************************************/
 
-static unsigned char * g_pucOutMaskData	= NULL,
-              * g_pucInData         = NULL,
-              * g_pucOutData		= NULL,
-              * g_pucHIRData		= NULL,
-              * g_pucTIRData		= NULL,
-              * g_pucHDRData		= NULL,
-              * g_pucTDRData		= NULL,
-              * g_pucIntelBuffer	= NULL,
-              * g_pucOutDMaskData	= NULL;
+static unsigned char *g_pucOutMaskData = NULL, *g_pucInData = NULL, *g_pucOutData = NULL, *g_pucHIRData = NULL,
+		     *g_pucTIRData = NULL, *g_pucHDRData = NULL, *g_pucTDRData = NULL, *g_pucIntelBuffer = NULL,
+		     *g_pucOutDMaskData = NULL;
 
 /***************************************************************
 *
@@ -218,36 +212,27 @@ static unsigned char * g_pucOutMaskData	= NULL,
 ***************************************************************/
 
 struct {
-	 unsigned char  CurState;  /* From this state */
-	 unsigned char  NextState; /* Step to this state */
-	 unsigned char  Pattern;   /* The tragetory of TMS */
-	 unsigned char  Pulses;    /* The number of steps */
-} g_JTAGTransistions[ 25 ] = {
-{ RESET,	RESET,		0xFC, 6 },	/* Transitions from RESET */
-{ RESET,	IDLE,		0x00, 1 },
-{ RESET,	DRPAUSE,	0x50, 5 },   
-{ RESET,	IRPAUSE,	0x68, 6 },   
-{ IDLE,		RESET,		0xE0, 3 },	/* Transitions from IDLE */
-{ IDLE,		DRPAUSE,	0xA0, 4 },
-{ IDLE,		IRPAUSE,	0xD0, 5 },
-{ DRPAUSE,	RESET,		0xF8, 5 },	/* Transitions from DRPAUSE */
-{ DRPAUSE,	IDLE,		0xC0, 3 },
-{ DRPAUSE,	IRPAUSE,	0xF4, 7 },
-{ DRPAUSE,	DRPAUSE,	0xE8, 6 },  /* 06/14/06 Support POLING STATUS LOOP*/
-{ IRPAUSE,	RESET,		0xF8, 5 },	/* Transitions from IRPAUSE */
-{ IRPAUSE,	IDLE,		0xC0, 3 },
-{ IRPAUSE,	DRPAUSE,	0xE8, 6 },
-{ DRPAUSE,	SHIFTDR,	0x80, 2 },  /* Extra transitions using SHIFTDR */
-{ IRPAUSE,	SHIFTDR,	0xE0, 5 },
-{ SHIFTDR,	DRPAUSE,	0x80, 2 },
-{ SHIFTDR,	IDLE,		0xC0, 3 },
-{ IRPAUSE,	SHIFTIR,	0x80, 2 },	/* Extra transitions using SHIFTIR */
-{ SHIFTIR,	IRPAUSE,	0x80, 2 },
-{ SHIFTIR,	IDLE,		0xC0, 3 },
-{ DRPAUSE,	DRCAPTURE,	0xE0, 4 }, /* 11/15/05 Support DRCAPTURE*/
-{ DRCAPTURE, DRPAUSE,	0x80, 2 },
-{ IDLE,     DRCAPTURE,	0x80, 2 },
-{ IRPAUSE,  DRCAPTURE, 	0xE0, 4 }
+	unsigned char CurState; /* From this state */
+	unsigned char NextState; /* Step to this state */
+	unsigned char Pattern; /* The tragetory of TMS */
+	unsigned char Pulses; /* The number of steps */
+} g_JTAGTransistions[25] = {
+	{ RESET, RESET, 0xFC, 6 }, /* Transitions from RESET */
+	{ RESET, IDLE, 0x00, 1 },	 { RESET, DRPAUSE, 0x50, 5 },
+	{ RESET, IRPAUSE, 0x68, 6 },	 { IDLE, RESET, 0xE0, 3 }, /* Transitions from IDLE */
+	{ IDLE, DRPAUSE, 0xA0, 4 },	 { IDLE, IRPAUSE, 0xD0, 5 },
+	{ DRPAUSE, RESET, 0xF8, 5 }, /* Transitions from DRPAUSE */
+	{ DRPAUSE, IDLE, 0xC0, 3 },	 { DRPAUSE, IRPAUSE, 0xF4, 7 },
+	{ DRPAUSE, DRPAUSE, 0xE8, 6 }, /* 06/14/06 Support POLING STATUS LOOP*/
+	{ IRPAUSE, RESET, 0xF8, 5 }, /* Transitions from IRPAUSE */
+	{ IRPAUSE, IDLE, 0xC0, 3 },	 { IRPAUSE, DRPAUSE, 0xE8, 6 },
+	{ DRPAUSE, SHIFTDR, 0x80, 2 }, /* Extra transitions using SHIFTDR */
+	{ IRPAUSE, SHIFTDR, 0xE0, 5 },	 { SHIFTDR, DRPAUSE, 0x80, 2 },
+	{ SHIFTDR, IDLE, 0xC0, 3 },	 { IRPAUSE, SHIFTIR, 0x80, 2 }, /* Extra transitions using SHIFTIR */
+	{ SHIFTIR, IRPAUSE, 0x80, 2 },	 { SHIFTIR, IDLE, 0xC0, 3 },
+	{ DRPAUSE, DRCAPTURE, 0xE0, 4 }, /* 11/15/05 Support DRCAPTURE*/
+	{ DRCAPTURE, DRPAUSE, 0x80, 2 }, { IDLE, DRCAPTURE, 0x80, 2 },
+	{ IRPAUSE, DRCAPTURE, 0xE0, 4 }
 };
 
 /***************************************************************
@@ -256,7 +241,7 @@ struct {
 *
 ***************************************************************/
 
-static LVDSPair * g_pLVDSList           = NULL;
+static LVDSPair *g_pLVDSList = NULL;
 static unsigned short g_usLVDSPairCount = 0;
 
 /***************************************************************
@@ -268,26 +253,25 @@ static unsigned short g_usLVDSPairCount = 0;
 static signed char ispVMCode();
 static signed char ispVMDataCode();
 static long int ispVMDataSize();
-static void ispVMData( unsigned char * Data );
-static signed char ispVMShift( signed char Code );
-static signed char ispVMAmble( signed char Code );
-static signed char ispVMLoop( unsigned short a_usLoopCount );
-static signed char ispVMBitShift( signed char mode, unsigned short bits );
-static void ispVMComment( unsigned short a_usCommentSize );
-static void ispVMHeader( unsigned short a_usHeaderSize );
-static signed char ispVMLCOUNT( unsigned short a_usCountSize );
-static void ispVMClocks( unsigned short Clocks );
-static void ispVMBypass( signed char ScanType, unsigned short Bits );
-static void ispVMStateMachine( signed char NextState );
+static void ispVMData(unsigned char *Data);
+static signed char ispVMShift(signed char Code);
+static signed char ispVMAmble(signed char Code);
+static signed char ispVMLoop(unsigned short a_usLoopCount);
+static signed char ispVMBitShift(signed char mode, unsigned short bits);
+static void ispVMComment(unsigned short a_usCommentSize);
+static void ispVMHeader(unsigned short a_usHeaderSize);
+static signed char ispVMLCOUNT(unsigned short a_usCountSize);
+static void ispVMClocks(unsigned short Clocks);
+static void ispVMBypass(signed char ScanType, unsigned short Bits);
+static void ispVMStateMachine(signed char NextState);
 static void ispVMStart();
 static void ispVMEnd();
 static signed char ispVMSend(unsigned short int);
 static signed char ispVMRead(unsigned short int);
 static signed char ispVMReadandSave(unsigned short int);
-static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount );
+static signed char ispVMProcessLVDS(unsigned short a_usLVDSCount);
 static void hardware_init(void);
 static void hardware_restore(void);
-
 
 /***************************************************************
 *
@@ -298,16 +282,16 @@ static void hardware_restore(void);
 //static void vme_out_hex(unsigned char hexOut);
 //static void vme_out_string(char *stringOut);
 static unsigned char GetByte();
-static void ispVMMemManager( signed char types, unsigned short size );
+static void ispVMMemManager(signed char types, unsigned short size);
 
 /***************************************************************
 *
 * External variables and functions in hardware.c module
 *
 ***************************************************************/
-static void ispVMDelay( unsigned short int a_usMicroSecondDelay );
+static void ispVMDelay(unsigned short int a_usMicroSecondDelay);
 static inline int readPort();
-static inline void writePort( int pins, int value );
+static inline void writePort(int pins, int value);
 static inline void sclock();
 static signed char g_cCurrentJTAGState;
 
@@ -324,23 +308,23 @@ static signed char g_cCurrentJTAGState;
 *
 ***************************************************************/
 
-static const char * GetState( unsigned char a_ucState )
+static const char *GetState(unsigned char a_ucState)
 {
-	switch( a_ucState ) {
+	switch (a_ucState) {
 	case RESET:
-		return( "RESET" );
+		return ("RESET");
 	case IDLE:
-		return( "IDLE" );
+		return ("IDLE");
 	case IRPAUSE:
-		return( "IRPAUSE" );
+		return ("IRPAUSE");
 	case DRPAUSE:
-		return( "DRPAUSE" );
+		return ("DRPAUSE");
 	case SHIFTIR:
-		return( "SHIFTIR" );
+		return ("SHIFTIR");
 	case SHIFTDR:
-		return( "SHIFTDR" );
-	case DRCAPTURE:/* 11/15/05 support DRCAPTURE*/
-		return( "DRCAPTURE" );
+		return ("SHIFTDR");
+	case DRCAPTURE: /* 11/15/05 support DRCAPTURE*/
+		return ("DRCAPTURE");
 	default:
 		break;
 	}
@@ -356,28 +340,27 @@ static const char * GetState( unsigned char a_ucState )
 *
 ***************************************************************/
 
-static void PrintData( unsigned short a_iDataSize, unsigned char * a_pucData )
+static void PrintData(unsigned short a_iDataSize, unsigned char *a_pucData)
 {
 	return;
 	//09/11/07 NN added local variables initialization
-	unsigned short usByteSize  = 0;
-	unsigned short usBitIndex  = 0;
+	unsigned short usByteSize = 0;
+	unsigned short usBitIndex = 0;
 	unsigned short usByteIndex = 0;
-	unsigned char ucByte       = 0;
-	unsigned char ucFlipByte   = 0;
+	unsigned char ucByte = 0;
+	unsigned char ucFlipByte = 0;
 
-	if ( a_iDataSize % 8 ) {
+	if (a_iDataSize % 8) {
 		//09/11/07 NN Type cast mismatch variables
 		usByteSize = (unsigned short)(a_iDataSize / 8 + 1);
-	}
-	else {
+	} else {
 		//09/11/07 NN Type cast mismatch variables
 		usByteSize = (unsigned short)(a_iDataSize / 8);
 	}
-	printf( "(" );
+	printf("(");
 	//09/11/07 NN Type cast mismatch variables
-	for ( usByteIndex = (unsigned short)(usByteSize - 1); usByteIndex >= 0; usByteIndex-- ) {
-		ucByte = a_pucData[ usByteIndex ];
+	for (usByteIndex = (unsigned short)(usByteSize - 1); usByteIndex >= 0; usByteIndex--) {
+		ucByte = a_pucData[usByteIndex];
 		ucFlipByte = 0x00;
 
 		/***************************************************************
@@ -386,9 +369,9 @@ static void PrintData( unsigned short a_iDataSize, unsigned char * a_pucData )
 		*
 		***************************************************************/
 
-		for ( usBitIndex = 0; usBitIndex < 8; usBitIndex++ ) {
+		for (usBitIndex = 0; usBitIndex < 8; usBitIndex++) {
 			ucFlipByte <<= 1;
-			if ( ucByte & 0x1) {
+			if (ucByte & 0x1) {
 				ucFlipByte |= 0x1;
 			}
 
@@ -401,12 +384,12 @@ static void PrintData( unsigned short a_iDataSize, unsigned char * a_pucData )
 		*
 		***************************************************************/
 
-		printf( "%.02X", ucFlipByte );
-		if ( ( usByteSize - usByteIndex ) % 40 == 39 ) {
-			printf( "\n\t\t" );
+		printf("%.02X", ucFlipByte);
+		if ((usByteSize - usByteIndex) % 40 == 39) {
+			printf("\n\t\t");
 		}
 	}
-	printf( ")" );
+	printf(")");
 }
 #endif //VME_DEBUG
 
@@ -422,15 +405,15 @@ static void PrintData( unsigned short a_iDataSize, unsigned char * a_pucData )
 static long int ispVMDataSize()
 {
 	//09/11/07 NN added local variables initialization
-	long int iSize           = 0;
+	long int iSize = 0;
 	signed char cCurrentByte = 0;
-	signed char cIndex       = 0;
+	signed char cIndex = 0;
 	cIndex = 0;
-	while ( ( cCurrentByte = GetByte() ) & 0x80 ) {
-		iSize |= ( ( long int ) ( cCurrentByte & 0x7F ) ) << cIndex;
+	while ((cCurrentByte = GetByte()) & 0x80) {
+		iSize |= ((long int)(cCurrentByte & 0x7F)) << cIndex;
 		cIndex += 7;
 	}
-	iSize |= ( ( long int ) ( cCurrentByte & 0x7F ) ) << cIndex;
+	iSize |= ((long int)(cCurrentByte & 0x7F)) << cIndex;
 	return iSize;
 }
 
@@ -448,12 +431,12 @@ static signed char ispVMCode()
 {
 	//09/11/07 NN added local variables initialization
 	unsigned short iRepeatSize = 0;
-	signed char cOpcode		   = 0;
-	signed char cRetCode       = 0;
-	unsigned char ucState      = 0;
-	unsigned short usDelay     = 0;
-	unsigned short usToggle    = 0;
-	unsigned char usByte       = 0;
+	signed char cOpcode = 0;
+	signed char cRetCode = 0;
+	unsigned char ucState = 0;
+	unsigned short usDelay = 0;
+	unsigned short usToggle = 0;
+	unsigned char usByte = 0;
 
 	/***************************************************************
 	*
@@ -464,28 +447,25 @@ static signed char ispVMCode()
 	*
 	***************************************************************/
 
-	if ( !( g_usDataType & LHEAP_IN ) && !( g_usDataType & HEAP_IN ) ) {
+	if (!(g_usDataType & LHEAP_IN) && !(g_usDataType & HEAP_IN)) {
 		usByte = GetByte();
-		if ( usByte == 0xf1 ) {
+		if (usByte == 0xf1) {
 			g_usDataType |= COMPRESS;
-		}
-		else if ( usByte == 0xf2 ) {
+		} else if (usByte == 0xf2) {
 			g_usDataType &= ~COMPRESS;
-		}
-		else {
+		} else {
 			return VME_INVALID_FILE;
 		}
 	}
-	
+
 	/***************************************************************
 	*
 	* Begin looping through all the VME opcodes.
 	*
 	***************************************************************/
 
-	while ( ( cOpcode = GetByte() ) >= 0 ) {
-
-		switch ( cOpcode ) {
+	while ((cOpcode = GetByte()) >= 0) {
+		switch (cOpcode) {
 		case STATE:
 
 			/***************************************************************
@@ -502,21 +482,17 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			if ( (g_usDataType & LHEAP_IN) &&
-				 (ucState == DRPAUSE ) &&
-				 ( g_cCurrentJTAGState == ucState ))
-			{
-				ispVMStateMachine( DRCAPTURE );
+			if ((g_usDataType & LHEAP_IN) && (ucState == DRPAUSE) && (g_cCurrentJTAGState == ucState)) {
+				ispVMStateMachine(DRCAPTURE);
 			}
 
-			ispVMStateMachine( ucState );
+			ispVMStateMachine(ucState);
 
 #ifdef VME_DEBUG
-			if ( g_usDataType & LHEAP_IN ) {
-				printf( "LDELAY %s ", GetState( ucState ) );
-			}
-			else {
-				printf( "STATE %s;\n", GetState( ucState ) );
+			if (g_usDataType & LHEAP_IN) {
+				printf("LDELAY %s ", GetState(ucState));
+			} else {
+				printf("STATE %s;\n", GetState(ucState));
 			}
 #endif //VME_DEBUG
 			break;
@@ -525,17 +501,16 @@ static signed char ispVMCode()
 		case XSDR:
 
 #ifdef VME_DEBUG
-			switch( cOpcode ) {
+			switch (cOpcode) {
 			case SIR:
-				printf( "SIR " );
+				printf("SIR ");
 				break;
 			case SDR:
 			case XSDR:
-				if ( g_usDataType & LHEAP_IN ) {
-					printf( "LSDR " );
-				}
-				else {
-					printf( "SDR " );
+				if (g_usDataType & LHEAP_IN) {
+					printf("LSDR ");
+				} else {
+					printf("SDR ");
 				}
 				break;
 			}
@@ -546,9 +521,9 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			cRetCode = ispVMShift( cOpcode );
-			if ( cRetCode != 0 ) {
-				return ( cRetCode );
+			cRetCode = ispVMShift(cOpcode);
+			if (cRetCode != 0) {
+				return (cRetCode);
 			}
 			break;
 		case WAIT:
@@ -560,12 +535,11 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			usDelay = (unsigned short) ispVMDataSize();
-			ispVMDelay( usDelay );
+			usDelay = (unsigned short)ispVMDataSize();
+			ispVMDelay(usDelay);
 
 #ifdef VME_DEBUG
-			if ( usDelay & 0x8000 ) {
-
+			if (usDelay & 0x8000) {
 				/***************************************************************
 				*
 				* Since MSB is set, the delay time must be decoded to 
@@ -575,26 +549,22 @@ static signed char ispVMCode()
 				***************************************************************/
 
 				usDelay &= ~0x8000;
-				if ( g_usDataType & LHEAP_IN ) {
-					printf( "%.2E SEC;\n", ( float ) usDelay / 1000 );
+				if (g_usDataType & LHEAP_IN) {
+					printf("%.2E SEC;\n", (float)usDelay / 1000);
+				} else {
+					printf("RUNTEST %.2E SEC;\n", (float)usDelay / 1000);
 				}
-				else {
-					printf( "RUNTEST %.2E SEC;\n", ( float ) usDelay / 1000 );
-				}
-			}
-			else {                       
-				
+			} else {
 				/***************************************************************
 				*
 				* Since MSB is not set, the delay time is given as microseconds.
 				*
 				***************************************************************/
 
-				if ( g_usDataType & LHEAP_IN ) {
-					printf( "%.2E SEC;\n", ( float ) usDelay / 1000000 );
-				}
-				else {
-					printf( "RUNTEST %.2E SEC;\n", ( float ) usDelay / 1000000 );
+				if (g_usDataType & LHEAP_IN) {
+					printf("%.2E SEC;\n", (float)usDelay / 1000000);
+				} else {
+					printf("RUNTEST %.2E SEC;\n", (float)usDelay / 1000000);
 				}
 			}
 #endif //VME_DEBUG
@@ -608,11 +578,11 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			usToggle = (unsigned short) ispVMDataSize();
-			ispVMClocks( usToggle );
+			usToggle = (unsigned short)ispVMDataSize();
+			ispVMClocks(usToggle);
 
 #ifdef VME_DEBUG
-			printf( "RUNTEST %d TCK;\n", usToggle );
+			printf("RUNTEST %d TCK;\n", usToggle);
 #endif //VME_DEBUG
 			break;
 		case ENDDR:
@@ -626,7 +596,7 @@ static signed char ispVMCode()
 			g_ucEndDR = GetByte();
 
 #ifdef VME_DEBUG
-			printf( "ENDDR %s;\n", GetState( g_ucEndDR ) );
+			printf("ENDDR %s;\n", GetState(g_ucEndDR));
 #endif //VME_DEBUG
 			break;
 		case ENDIR:
@@ -640,7 +610,7 @@ static signed char ispVMCode()
 			g_ucEndIR = GetByte();
 
 #ifdef VME_DEBUG
-			printf( "ENDIR %s;\n", GetState( g_ucEndIR ) );
+			printf("ENDIR %s;\n", GetState(g_ucEndIR));
 #endif //VME_DEBUG
 			break;
 		case HIR:
@@ -649,22 +619,22 @@ static signed char ispVMCode()
 		case TDR:
 
 #ifdef VME_DEBUG
-			switch( cOpcode ) {
+			switch (cOpcode) {
 			case HIR:
-				printf( "HIR " );
+				printf("HIR ");
 				break;
 			case TIR:
-				printf( "TIR " );
+				printf("TIR ");
 				break;
 			case HDR:
-				printf( "HDR " );
+				printf("HDR ");
 				break;
 			case TDR:
-				printf( "TDR " );
+				printf("TDR ");
 				break;
 			}
 #endif //VME_DEBUG
-			
+
 			/***************************************************************
 			*
 			* Set the header/trailer of the device in order to bypass
@@ -672,13 +642,13 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			cRetCode = ispVMAmble( cOpcode );
-			if ( cRetCode != 0 ) {
-				return ( cRetCode );
+			cRetCode = ispVMAmble(cOpcode);
+			if (cRetCode != 0) {
+				return (cRetCode);
 			}
 
 #ifdef VME_DEBUG
-			printf( ";\n" );
+			printf(";\n");
 #endif //VME_DEBUG
 			break;
 		case MEM:
@@ -691,10 +661,10 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			g_usMaxSize = (unsigned short) ispVMDataSize();
+			g_usMaxSize = (unsigned short)ispVMDataSize();
 
 #ifdef VME_DEBUG
-			printf( "// MEMSIZE %d\n", g_usMaxSize );
+			printf("// MEMSIZE %d\n", g_usMaxSize);
 #endif //VME_DEBUG
 			break;
 		case VENDOR:
@@ -706,22 +676,22 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			cOpcode = GetByte();
-			switch ( cOpcode ) {
+			switch (cOpcode) {
 			case LATTICE:
 #ifdef VME_DEBUG
-				printf( "// VENDOR LATTICE\n" );
+				printf("// VENDOR LATTICE\n");
 #endif //VME_DEBUG
 				g_cVendor = LATTICE;
 				break;
 			case ALTERA:
 #ifdef VME_DEBUG
-				printf( "// VENDOR ALTERA\n" );
+				printf("// VENDOR ALTERA\n");
 #endif //VME_DEBUG
 				g_cVendor = ALTERA;
 				break;
 			case XILINX:
 #ifdef VME_DEBUG
-				printf( "// VENDOR XILINX\n" );
+				printf("// VENDOR XILINX\n");
 #endif //VME_DEBUG
 				g_cVendor = XILINX;
 				break;
@@ -739,7 +709,7 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			g_usFlowControl |= (unsigned short) ispVMDataSize();
+			g_usFlowControl |= (unsigned short)ispVMDataSize();
 			break;
 		case RESETFLOW:
 
@@ -750,7 +720,7 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			g_usFlowControl &= (unsigned short) ~( ispVMDataSize() );
+			g_usFlowControl &= (unsigned short)~(ispVMDataSize());
 			break;
 		case HEAP:
 
@@ -761,11 +731,11 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			cRetCode = GetByte();
-			if ( cRetCode != SECUREHEAP ) {
+			if (cRetCode != SECUREHEAP) {
 				return VME_INVALID_FILE;
 			}
 			//09/11/07 NN Type cast mismatch variables
-			g_iHEAPSize = (unsigned short) ispVMDataSize();
+			g_iHEAPSize = (unsigned short)ispVMDataSize();
 
 			/****************************************************************************
 			*
@@ -773,11 +743,11 @@ static signed char ispVMCode()
 			*
 			*****************************************************************************/
 
-			if ( g_iHEAPSize > g_usHeapSize ) {
+			if (g_iHEAPSize > g_usHeapSize) {
 				g_usHeapSize = g_iHEAPSize;
 			}
 
-			ispVMMemManager( HEAP, ( unsigned short ) g_iHEAPSize );
+			ispVMMemManager(HEAP, (unsigned short)g_iHEAPSize);
 			break;
 		case REPEAT:
 
@@ -790,11 +760,11 @@ static signed char ispVMCode()
 			g_usRepeatLoops = 0;
 
 			//09/11/07 NN Type cast mismatch variables
-			iRepeatSize = (unsigned short) ispVMDataSize();
-			
-			cRetCode = ispVMLoop( ( unsigned short ) iRepeatSize );
-			if ( cRetCode != 0 ) {
-				return ( cRetCode );
+			iRepeatSize = (unsigned short)ispVMDataSize();
+
+			cRetCode = ispVMLoop((unsigned short)iRepeatSize);
+			if (cRetCode != 0) {
+				return (cRetCode);
 			}
 			break;
 		case ENDLOOP:
@@ -805,7 +775,7 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			return ( cRetCode );
+			return (cRetCode);
 		case ENDVME:
 
 			/***************************************************************
@@ -814,7 +784,7 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			return ( cRetCode );
+			return (cRetCode);
 		case SHR:
 
 			/***************************************************************
@@ -826,7 +796,7 @@ static signed char ispVMCode()
 			g_usFlowControl |= SHIFTRIGHT;
 
 			//09/11/07 NN Type cast mismatch variables
-			g_usShiftValue = (unsigned short) (g_usRepeatLoops * (unsigned short)GetByte());
+			g_usShiftValue = (unsigned short)(g_usRepeatLoops * (unsigned short)GetByte());
 			break;
 		case SHL:
 
@@ -850,13 +820,13 @@ static signed char ispVMCode()
 			***************************************************************/
 
 			//09/11/07 NN Type cast mismatch variables
-			g_iFrequency = (int) (ispVMDataSize() / 1000);
+			g_iFrequency = (int)(ispVMDataSize() / 1000);
 			//06/27/06 Added to make the frequency compatibles with version 10
-			if(g_iFrequency == 1)
+			if (g_iFrequency == 1)
 				g_iFrequency = 1000;
 
 #ifdef VME_DEBUG
-			printf( "FREQUENCY %.2E HZ;\n", ( float ) g_iFrequency * 1000 );
+			printf("FREQUENCY %.2E HZ;\n", (float)g_iFrequency * 1000);
 #endif //VME_DEBUG
 			break;
 		case LCOUNT:
@@ -867,9 +837,9 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			cRetCode = ispVMLCOUNT( ( unsigned short ) ispVMDataSize() );
-			if ( cRetCode != 0 ) {
-				return ( cRetCode );
+			cRetCode = ispVMLCOUNT((unsigned short)ispVMDataSize());
+			if (cRetCode != 0) {
+				return (cRetCode);
 			}
 			break;
 		case VUES:
@@ -890,7 +860,7 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			ispVMComment( ( unsigned short ) ispVMDataSize() );
+			ispVMComment((unsigned short)ispVMDataSize());
 			break;
 		case LVDS:
 
@@ -900,7 +870,7 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			ispVMProcessLVDS( ( unsigned short ) ispVMDataSize() );
+			ispVMProcessLVDS((unsigned short)ispVMDataSize());
 			break;
 		case HEADER:
 
@@ -910,26 +880,26 @@ static signed char ispVMCode()
 			*
 			***************************************************************/
 
-			ispVMHeader( ( unsigned short ) ispVMDataSize() );
+			ispVMHeader((unsigned short)ispVMDataSize());
 			break;
 		/* 03/14/06 Support Toggle ispENABLE signal*/
 		case ispEN:
 			ucState = GetByte();
-			if((ucState == ON)||(ucState == 0x01))
-				writePort( g_ucPinENABLE, 0x01 );
+			if ((ucState == ON) || (ucState == 0x01))
+				writePort(g_ucPinENABLE, 0x01);
 			else
-				writePort( g_ucPinENABLE, 0x00 );
-			ispVMDelay( 1 );
-			break;	
-        /* 05/24/06 support Toggle TRST pin*/
+				writePort(g_ucPinENABLE, 0x00);
+			ispVMDelay(1);
+			break;
+			/* 05/24/06 support Toggle TRST pin*/
 		case TRST:
 			ucState = GetByte();
-			if(ucState == 0x01)
-				writePort( g_ucPinTRST, 0x01 );
+			if (ucState == 0x01)
+				writePort(g_ucPinTRST, 0x01);
 			else
-				writePort( g_ucPinTRST, 0x00 );
-			ispVMDelay( 1 );
-			break;	                
+				writePort(g_ucPinTRST, 0x00);
+			ispVMDelay(1);
+			break;
 		default:
 
 			/***************************************************************
@@ -939,13 +909,13 @@ static signed char ispVMCode()
 			***************************************************************/
 
 #ifdef VME_DEBUG
-			printf( "\nINVALID OPCODE: 0x%.2X\n", cOpcode );
+			printf("\nINVALID OPCODE: 0x%.2X\n", cOpcode);
 #endif //VME_DEBUG
 
 			return VME_INVALID_FILE;
 		}
 	}
-	
+
 	/***************************************************************
 	*
 	* Invalid exit point. Processing the token 'ENDVME' is the only
@@ -953,7 +923,7 @@ static signed char ispVMCode()
 	*
 	***************************************************************/
 
-	return ( VME_INVALID_FILE ); 
+	return (VME_INVALID_FILE);
 }
 
 /***************************************************************
@@ -967,201 +937,198 @@ static signed char ispVMCode()
 static signed char ispVMDataCode()
 {
 	//09/11/07 NN added local variables initialization
-	signed char cDataByte    = 0;
-	signed char siDataSource = 0;  /*source of data from file by default*/
-	
-	if ( g_usDataType & HEAP_IN ) {
-		siDataSource = 1;  /*the source of data from memory*/
+	signed char cDataByte = 0;
+	signed char siDataSource = 0; /*source of data from file by default*/
+
+	if (g_usDataType & HEAP_IN) {
+		siDataSource = 1; /*the source of data from memory*/
 	}
-	
+
 	/****************************************************************************
 	*
 	* Clear the data type register.
 	*
 	*****************************************************************************/
 
-	g_usDataType &= ~( MASK_DATA + TDI_DATA + TDO_DATA + DMASK_DATA );
-	
+	g_usDataType &= ~(MASK_DATA + TDI_DATA + TDO_DATA + DMASK_DATA);
+
 	/****************************************************************************
 	*
 	* Iterate through SIR/SDR command and look for TDI, TDO, MASK, etc.
 	*
 	*****************************************************************************/
 
-	while ( ( cDataByte = GetByte() ) >= 0 ) { 
+	while ((cDataByte = GetByte()) >= 0) {
+		ispVMMemManager(cDataByte, g_usMaxSize);
+		switch (cDataByte) {
+		case TDI:
 
-			ispVMMemManager( cDataByte, g_usMaxSize );
-			switch ( cDataByte ) {
-			case TDI:
-
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Store the maximum size of the TDI buffer. Used to convert VME to HEX.
 				*
 				*****************************************************************************/
 
-				if ( g_usiDataSize > g_usTDISize ) {
-					g_usTDISize = g_usiDataSize;
-				}
-				/****************************************************************************
+			if (g_usiDataSize > g_usTDISize) {
+				g_usTDISize = g_usiDataSize;
+			}
+			/****************************************************************************
 				*
 				* Updated data type register to indicate that TDI data is currently being
 				* used. Process the data in the VME file into the TDI buffer.
 				*
 				*****************************************************************************/
 
-				g_usDataType |= TDI_DATA;
-				ispVMData( g_pucInData );
-				break;
-			case XTDO:
+			g_usDataType |= TDI_DATA;
+			ispVMData(g_pucInData);
+			break;
+		case XTDO:
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Store the maximum size of the TDO buffer. Used to convert VME to HEX.
 				*
 				*****************************************************************************/
 
-				if ( g_usiDataSize > g_usTDOSize ) {
-					g_usTDOSize = g_usiDataSize;
-				}
+			if (g_usiDataSize > g_usTDOSize) {
+				g_usTDOSize = g_usiDataSize;
+			}
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Updated data type register to indicate that TDO data is currently being
 				* used.
 				*
 				*****************************************************************************/
 
-				g_usDataType |= TDO_DATA;
-				break;
-            case TDO:
+			g_usDataType |= TDO_DATA;
+			break;
+		case TDO:
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Store the maximum size of the TDO buffer. Used to convert VME to HEX.
 				*
 				*****************************************************************************/
 
-				if ( g_usiDataSize > g_usTDOSize ) {
-					g_usTDOSize = g_usiDataSize;
-				}
+			if (g_usiDataSize > g_usTDOSize) {
+				g_usTDOSize = g_usiDataSize;
+			}
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Updated data type register to indicate that TDO data is currently being
 				* used. Process the data in the VME file into the TDO buffer.
 				*
 				*****************************************************************************/
 
-				g_usDataType |= TDO_DATA;
-				ispVMData( g_pucOutData );
-				break;
-            case MASK:
+			g_usDataType |= TDO_DATA;
+			ispVMData(g_pucOutData);
+			break;
+		case MASK:
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Store the maximum size of the MASK buffer. Used to convert VME to HEX.
 				*
 				*****************************************************************************/
 
-				if ( g_usiDataSize > g_usMASKSize ) {
-					g_usMASKSize = g_usiDataSize;
-				}
+			if (g_usiDataSize > g_usMASKSize) {
+				g_usMASKSize = g_usiDataSize;
+			}
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Updated data type register to indicate that MASK data is currently being
 				* used. Process the data in the VME file into the MASK buffer.
 				*
 				*****************************************************************************/
 
-				g_usDataType |= MASK_DATA;
-				ispVMData( g_pucOutMaskData );
-				break;
-			case DMASK:
+			g_usDataType |= MASK_DATA;
+			ispVMData(g_pucOutMaskData);
+			break;
+		case DMASK:
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Store the maximum size of the DMASK buffer. Used to convert VME to HEX.
 				*
 				*****************************************************************************/
 
-				if ( g_usiDataSize > g_usDMASKSize ) {
-					g_usDMASKSize = g_usiDataSize;
-				}
+			if (g_usiDataSize > g_usDMASKSize) {
+				g_usDMASKSize = g_usiDataSize;
+			}
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Updated data type register to indicate that DMASK data is currently being
 				* used. Process the data in the VME file into the DMASK buffer.
 				*
 				*****************************************************************************/
 
-				g_usDataType |= DMASK_DATA;
-				ispVMData( g_pucOutDMaskData );
-				break;
-			case CONTINUE:
-				return ( 0 );
-			default:      
-				
-				/****************************************************************************
+			g_usDataType |= DMASK_DATA;
+			ispVMData(g_pucOutDMaskData);
+			break;
+		case CONTINUE:
+			return (0);
+		default:
+
+			/****************************************************************************
 				*
 				* Encountered invalid opcode.
 				*
 				*****************************************************************************/
 
-				return ( VME_INVALID_FILE );
-			}
-			
-			switch ( cDataByte ) {
-			case TDI:
+			return (VME_INVALID_FILE);
+		}
 
-				/****************************************************************************
+		switch (cDataByte) {
+		case TDI:
+
+			/****************************************************************************
 				*
 				* Left bit shift. Used when performing algorithm looping.
 				*
 				*****************************************************************************/
 
-				if ( g_usFlowControl & SHIFTLEFT ) {
-					ispVMBitShift( SHL, g_usShiftValue );
-					g_usFlowControl &= ~SHIFTLEFT;
-				}
+			if (g_usFlowControl & SHIFTLEFT) {
+				ispVMBitShift(SHL, g_usShiftValue);
+				g_usFlowControl &= ~SHIFTLEFT;
+			}
 
-				/****************************************************************************
+			/****************************************************************************
 				*
 				* Right bit shift. Used when performing algorithm looping.
 				*
 				*****************************************************************************/
 
-				if ( g_usFlowControl & SHIFTRIGHT ) {
-					ispVMBitShift( SHR, g_usShiftValue );
-					g_usFlowControl &= ~SHIFTRIGHT;
-				}               
-			default:
-				break;
+			if (g_usFlowControl & SHIFTRIGHT) {
+				ispVMBitShift(SHR, g_usShiftValue);
+				g_usFlowControl &= ~SHIFTRIGHT;
 			}
-			
-			if ( siDataSource ) {
-				g_usDataType |= HEAP_IN;  /*restore data from memory*/
-			}
+		default:
+			break;
+		}
+
+		if (siDataSource) {
+			g_usDataType |= HEAP_IN; /*restore data from memory*/
+		}
 	}
-	
-	if ( siDataSource ) {  /*fetch data from heap memory upon return*/
+
+	if (siDataSource) { /*fetch data from heap memory upon return*/
 		g_usDataType |= HEAP_IN;
 	}
 
-	if ( cDataByte < 0 ) {
-
+	if (cDataByte < 0) {
 		/****************************************************************************
 		*
 		* Encountered invalid opcode.
 		*
 		*****************************************************************************/
 
-		return ( VME_INVALID_FILE );
-	}
-	else {
-		return ( 0 );
+		return (VME_INVALID_FILE);
+	} else {
+		return (0);
 	}
 }
 
@@ -1212,100 +1179,98 @@ static signed char ispVMDataCode()
 *
 ***************************************************************/
 
-static void ispVMData( unsigned char * ByteData )
+static void ispVMData(unsigned char *ByteData)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short size               = 0;
-	unsigned short i, j, m, getData   = 0;
-	unsigned char cDataByte           = 0;
-	unsigned char compress            = 0;
-	unsigned short FFcount            = 0;
-	unsigned char compr_char          = 0xFF; 
-	unsigned short index              = 0;
-	signed char compression           = 0;
-	
+	unsigned short size = 0;
+	unsigned short i, j, m, getData = 0;
+	unsigned char cDataByte = 0;
+	unsigned char compress = 0;
+	unsigned short FFcount = 0;
+	unsigned char compr_char = 0xFF;
+	unsigned short index = 0;
+	signed char compression = 0;
+
 	/*convert number in bits to bytes*/
-	if (g_usiDataSize%8>0) {
+	if (g_usiDataSize % 8 > 0) {
 		//09/11/07 NN Type cast mismatch variables
-		size = (unsigned short)(g_usiDataSize/8 + 1);
-	}
-	else {
+		size = (unsigned short)(g_usiDataSize / 8 + 1);
+	} else {
 		//09/11/07 NN Type cast mismatch variables
-		size = (unsigned short)(g_usiDataSize/8);
+		size = (unsigned short)(g_usiDataSize / 8);
 	}
-	
+
 	/* If there is compression, then check if compress by key of 0x00 or 0xFF
 	   or by other keys or by nibble blocks*/
-	
-	if ( g_usDataType & COMPRESS ) {
+
+	if (g_usDataType & COMPRESS) {
 		compression = 1;
-		if ( ( ( compress = GetByte() ) == VAR ) && ( g_usDataType & HEAP_IN ) ) {
+		if (((compress = GetByte()) == VAR) && (g_usDataType & HEAP_IN)) {
 			getData = 1;
 			g_usDataType &= ~(HEAP_IN);
 			compress = GetByte();
 		}
-		
-		switch (compress){
-		case 0x00:  
+
+		switch (compress) {
+		case 0x00:
 			/* No compression */
-			compression = 0; 
-			break;            
-		case 0x01:  
+			compression = 0;
+			break;
+		case 0x01:
 			/* Compress by byte 0x00 */
 			compr_char = 0x00;
 			break;
-		case 0x02: 
+		case 0x02:
 			/* Compress by byte 0xFF */
-			compr_char = 0xFF;  
+			compr_char = 0xFF;
 			break;
-		case 0xFF: 
+		case 0xFF:
 			/* Huffman encoding */
 			compr_char = GetByte();
 			i = 8;
-			for ( index = 0; index < size; index++ ) {
-				ByteData[ index ] = 0x00;
-				if ( i > 7 ) {
-					cDataByte = GetByte(); 
+			for (index = 0; index < size; index++) {
+				ByteData[index] = 0x00;
+				if (i > 7) {
+					cDataByte = GetByte();
 					i = 0;
 				}
-				if ((cDataByte << i++) & 0x80) 
+				if ((cDataByte << i++) & 0x80)
 					m = 8;
 				else {
 					ByteData[index] = compr_char;
 					m = 0;
 				}
-				
+
 				for (j = 0; j < m; j++) {
 					if (i > 7) {
-						cDataByte = GetByte(); 
+						cDataByte = GetByte();
 						i = 0;
 					}
-					ByteData[index] |=((cDataByte << i++)&0x80) >> j;
-				} 
-			}     
+					ByteData[index] |= ((cDataByte << i++) & 0x80) >> j;
+				}
+			}
 			size = 0;
 			break;
-		default:   
-			for (index = 0; index < size; index++) 
+		default:
+			for (index = 0; index < size; index++)
 				ByteData[index] = 0x00;
 			for (index = 0; index < compress; index++) {
-				if (index%2 == 0) 
+				if (index % 2 == 0)
 					cDataByte = GetByte();
-				for (i = 0; i < size*2/compress; i++){
+				for (i = 0; i < size * 2 / compress; i++) {
 					//09/11/07 NN Type cast mismatch variables
-					j = (unsigned short)(index + (i*(unsigned short)compress));
+					j = (unsigned short)(index + (i * (unsigned short)compress));
 					/*clear the nibble to zero first*/
-					if (j%2) {
-						if (index%2) 
-							ByteData[j/2] |= cDataByte & 0x0F;
-						else 
-							ByteData[j/2] |= cDataByte >> 4;
-					}
-					else {
-						if (index%2) 
-							ByteData[j/2] |= cDataByte << 4;
-						else 
-							ByteData[j/2] |= cDataByte & 0xF0;
+					if (j % 2) {
+						if (index % 2)
+							ByteData[j / 2] |= cDataByte & 0x0F;
+						else
+							ByteData[j / 2] |= cDataByte >> 4;
+					} else {
+						if (index % 2)
+							ByteData[j / 2] |= cDataByte << 4;
+						else
+							ByteData[j / 2] |= cDataByte & 0xF0;
 					}
 				}
 			}
@@ -1313,29 +1278,28 @@ static void ispVMData( unsigned char * ByteData )
 			break;
 		}
 	}
-	
+
 	FFcount = 0;
 
 	/* Decompress by byte 0x00 or 0xFF */
 	for (index = 0; index < size; index++) {
 		if (FFcount <= 0) {
 			cDataByte = GetByte();
-			if ((cDataByte == VAR) && (g_usDataType&HEAP_IN) && !getData && !(g_usDataType&COMPRESS)) {
+			if ((cDataByte == VAR) && (g_usDataType & HEAP_IN) && !getData && !(g_usDataType & COMPRESS)) {
 				getData = 1;
 				g_usDataType &= ~(HEAP_IN);
 				cDataByte = GetByte();
 			}
-			ByteData[index] = cDataByte; 
-			if ((compression) &&(cDataByte == compr_char)) /*decompression is on*/
+			ByteData[index] = cDataByte;
+			if ((compression) && (cDataByte == compr_char)) /*decompression is on*/
 				//09/11/07 NN Type cast mismatch variables
-				FFcount = (unsigned short) ispVMDataSize();     /*The number of 0xFF or 0x00 bytes*/
-		}
-		else {
+				FFcount = (unsigned short)ispVMDataSize(); /*The number of 0xFF or 0x00 bytes*/
+		} else {
 			FFcount--; /*Use up the 0xFF chain first*/
 			ByteData[index] = compr_char;
 		}
 	}
-	
+
 	if (getData) {
 		g_usDataType |= HEAP_IN;
 		getData = 0;
@@ -1350,185 +1314,179 @@ static void ispVMData( unsigned char * ByteData )
 *
 ***************************************************************/
 
-static signed char ispVMShift( signed char a_cCode )
+static signed char ispVMShift(signed char a_cCode)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short iDataIndex  = 0;
-	unsigned short iReadLoop   = 0;
-	signed char cRetCode       = 0;
-	
-	cRetCode=0;
-	//09/11/07 NN Type cast mismatch variables
-	g_usiDataSize = (unsigned short) ispVMDataSize();
+	unsigned short iDataIndex = 0;
+	unsigned short iReadLoop = 0;
+	signed char cRetCode = 0;
 
-	g_usDataType &= ~( SIR_DATA + EXPRESS + SDR_DATA );   /*clear the flags first*/
-	switch ( a_cCode ) {
+	cRetCode = 0;
+	//09/11/07 NN Type cast mismatch variables
+	g_usiDataSize = (unsigned short)ispVMDataSize();
+
+	g_usDataType &= ~(SIR_DATA + EXPRESS + SDR_DATA); /*clear the flags first*/
+	switch (a_cCode) {
 	case SIR:
 		g_usDataType |= SIR_DATA;
 		/* 1/15/04 If performing cascading, then go directly to SHIFTIR.  Else, 
 		   go to IRPAUSE before going to SHIFTIR */
-		if ( g_usFlowControl & CASCADE ) {
-			ispVMStateMachine( SHIFTIR );
-		}
-		else {
-			ispVMStateMachine( IRPAUSE );
-			ispVMStateMachine( SHIFTIR );
-			if ( g_usHeadIR > 0 ){ 
-				ispVMBypass( HIR, g_usHeadIR );
+		if (g_usFlowControl & CASCADE) {
+			ispVMStateMachine(SHIFTIR);
+		} else {
+			ispVMStateMachine(IRPAUSE);
+			ispVMStateMachine(SHIFTIR);
+			if (g_usHeadIR > 0) {
+				ispVMBypass(HIR, g_usHeadIR);
 				sclock();
 			}
 		}
 		break;
-	case XSDR:  
+	case XSDR:
 		g_usDataType |= EXPRESS; /*mark simultaneous in and out*/
-    case SDR:
+	case SDR:
 		g_usDataType |= SDR_DATA;
 		/* 1/15/04 If already in SHIFTDR, then do not move state or shift in header.  
 		   This would imply that the previously shifted frame was a cascaded frame.  */
-		if ( g_cCurrentJTAGState != SHIFTDR ) {
+		if (g_cCurrentJTAGState != SHIFTDR) {
 			/* 1/15/04 If performing cascading, then go directly to SHIFTDR.  Else, 
 		       go to DRPAUSE before going to SHIFTDR */
-			if ( g_usFlowControl & CASCADE ) {
-				if ( g_cCurrentJTAGState == DRPAUSE ) {
-					ispVMStateMachine( SHIFTDR );
+			if (g_usFlowControl & CASCADE) {
+				if (g_cCurrentJTAGState == DRPAUSE) {
+					ispVMStateMachine(SHIFTDR);
 					/* 1/15/04 If cascade flag has been set and the current state is 
 					   DRPAUSE, this implies that the first cascaded frame is about to
 					   be shifted in.  The header must be shifted prior to shifting
 					   the first cascaded frame. */
-					if ( g_usHeadDR > 0 ) {
-						ispVMBypass( HDR, g_usHeadDR );
+					if (g_usHeadDR > 0) {
+						ispVMBypass(HDR, g_usHeadDR);
 						sclock();
 					}
+				} else {
+					ispVMStateMachine(SHIFTDR);
 				}
-				else {
-					ispVMStateMachine( SHIFTDR );
-				}
-			}
-			else {
-				ispVMStateMachine( DRPAUSE );
-				ispVMStateMachine( SHIFTDR );
-				if ( g_usHeadDR > 0 ) {
-					ispVMBypass( HDR, g_usHeadDR );
+			} else {
+				ispVMStateMachine(DRPAUSE);
+				ispVMStateMachine(SHIFTDR);
+				if (g_usHeadDR > 0) {
+					ispVMBypass(HDR, g_usHeadDR);
 					sclock();
 				}
 			}
 		}
 		break;
 	default:
-		return ( VME_INVALID_FILE );
+		return (VME_INVALID_FILE);
 	}
 
 	cRetCode = ispVMDataCode();
-	
-	if ( cRetCode != 0 ) {
-		return ( VME_INVALID_FILE );
+
+	if (cRetCode != 0) {
+		return (VME_INVALID_FILE);
 	}
 
 #ifdef VME_DEBUG
-	printf( "%d ", g_usiDataSize );
+	printf("%d ", g_usiDataSize);
 
-	if ( g_usDataType & TDI_DATA ) {
-		printf( "TDI " );
-		PrintData( g_usiDataSize, g_pucInData );
+	if (g_usDataType & TDI_DATA) {
+		printf("TDI ");
+		PrintData(g_usiDataSize, g_pucInData);
 	}
 
-	if ( g_usDataType & TDO_DATA ) {
-		printf( "\n\t\tTDO " );
-		PrintData( g_usiDataSize, g_pucOutData );
+	if (g_usDataType & TDO_DATA) {
+		printf("\n\t\tTDO ");
+		PrintData(g_usiDataSize, g_pucOutData);
 	}
 
-	if ( g_usDataType & MASK_DATA ) {
-		printf( "\n\t\tMASK " );
-		PrintData( g_usiDataSize, g_pucOutMaskData );
+	if (g_usDataType & MASK_DATA) {
+		printf("\n\t\tMASK ");
+		PrintData(g_usiDataSize, g_pucOutMaskData);
 	}
 
-	if ( g_usDataType & DMASK_DATA ) {
-		printf( "\n\t\tDMASK " );
-		PrintData( g_usiDataSize, g_pucOutDMaskData );
+	if (g_usDataType & DMASK_DATA) {
+		printf("\n\t\tDMASK ");
+		PrintData(g_usiDataSize, g_pucOutDMaskData);
 	}
 
-	printf( ";\n" );
+	printf(";\n");
 #endif //VME_DEBUG
-	
-	if ( g_usDataType & TDO_DATA || g_usDataType & DMASK_DATA ) {
-		if(g_usDataType & DMASK_DATA){
-			cRetCode = ispVMReadandSave( g_usiDataSize );
-			if(!cRetCode){
-				if ( g_usTailDR > 0 ) {
+
+	if (g_usDataType & TDO_DATA || g_usDataType & DMASK_DATA) {
+		if (g_usDataType & DMASK_DATA) {
+			cRetCode = ispVMReadandSave(g_usiDataSize);
+			if (!cRetCode) {
+				if (g_usTailDR > 0) {
 					sclock();
-					ispVMBypass( TDR, g_usTailDR ); 
+					ispVMBypass(TDR, g_usTailDR);
 				}
-				ispVMStateMachine( DRPAUSE );
-				ispVMStateMachine( SHIFTDR );
-				if( g_usHeadDR > 0 ){
-					ispVMBypass( HDR, g_usHeadDR );
+				ispVMStateMachine(DRPAUSE);
+				ispVMStateMachine(SHIFTDR);
+				if (g_usHeadDR > 0) {
+					ispVMBypass(HDR, g_usHeadDR);
 					sclock();
 				}
-				for ( iDataIndex=0; iDataIndex < g_usiDataSize / 8 + 1; iDataIndex++ )
-					g_pucInData[ iDataIndex ] = g_pucOutData[ iDataIndex ];
-				g_usDataType &= ~( TDO_DATA+ DMASK_DATA );	
-				cRetCode = ispVMSend( g_usiDataSize );
+				for (iDataIndex = 0; iDataIndex < g_usiDataSize / 8 + 1; iDataIndex++)
+					g_pucInData[iDataIndex] = g_pucOutData[iDataIndex];
+				g_usDataType &= ~(TDO_DATA + DMASK_DATA);
+				cRetCode = ispVMSend(g_usiDataSize);
 			}
-		}
-		else{
-			cRetCode = ispVMRead( g_usiDataSize );
-			if ( cRetCode == -1 && g_cVendor == XILINX ) {
-				for( iReadLoop = 0; iReadLoop < 30; iReadLoop++ ){
-					cRetCode = ispVMRead( g_usiDataSize );
-					if( !cRetCode ) {
+		} else {
+			cRetCode = ispVMRead(g_usiDataSize);
+			if (cRetCode == -1 && g_cVendor == XILINX) {
+				for (iReadLoop = 0; iReadLoop < 30; iReadLoop++) {
+					cRetCode = ispVMRead(g_usiDataSize);
+					if (!cRetCode) {
 						break;
-					}
-					else {
-						ispVMStateMachine( DRPAUSE ); /*Always DRPAUSE*/
+					} else {
+						ispVMStateMachine(DRPAUSE); /*Always DRPAUSE*/
 						/*Bypass other devices when appropriate*/
-						ispVMBypass( TDR, g_usTailDR );
-						ispVMStateMachine( g_ucEndDR );
-						ispVMStateMachine( IDLE );
-						ispVMDelay( 1000 );
+						ispVMBypass(TDR, g_usTailDR);
+						ispVMStateMachine(g_ucEndDR);
+						ispVMStateMachine(IDLE);
+						ispVMDelay(1000);
 					}
 				}
 			}
 		}
+	} else { /*TDI only*/
+		cRetCode = ispVMSend(g_usiDataSize);
 	}
-	else { /*TDI only*/
-		cRetCode = ispVMSend( g_usiDataSize );
-	}
-	
+
 	/*transfer the input data to the output buffer for the next verify*/
-	if ( ( g_usDataType & EXPRESS ) || ( a_cCode == SDR ) ) {
-		if ( g_pucOutData ) {
-			for ( iDataIndex=0; iDataIndex < g_usiDataSize / 8 + 1; iDataIndex++ )
-				g_pucOutData[ iDataIndex ] = g_pucInData[ iDataIndex ];
+	if ((g_usDataType & EXPRESS) || (a_cCode == SDR)) {
+		if (g_pucOutData) {
+			for (iDataIndex = 0; iDataIndex < g_usiDataSize / 8 + 1; iDataIndex++)
+				g_pucOutData[iDataIndex] = g_pucInData[iDataIndex];
 		}
 	}
-	
-	switch( a_cCode ) {
+
+	switch (a_cCode) {
 	case SIR:
 		/* 1/15/04 If not performing cascading, then shift ENDIR */
-		if ( !( g_usFlowControl & CASCADE ) ) {
-			if ( g_usTailIR > 0 ) {
+		if (!(g_usFlowControl & CASCADE)) {
+			if (g_usTailIR > 0) {
 				sclock();
-				ispVMBypass( TIR, g_usTailIR );
+				ispVMBypass(TIR, g_usTailIR);
 			}
-			ispVMStateMachine( g_ucEndIR );
+			ispVMStateMachine(g_ucEndIR);
 		}
 		break;
-    case XSDR:
-    case SDR: 
+	case XSDR:
+	case SDR:
 		/* 1/15/04 If not performing cascading, then shift ENDDR */
-		if ( !( g_usFlowControl & CASCADE ) ) {
-			if ( g_usTailDR > 0 ) {
+		if (!(g_usFlowControl & CASCADE)) {
+			if (g_usTailDR > 0) {
 				sclock();
-				ispVMBypass( TDR, g_usTailDR );
+				ispVMBypass(TDR, g_usTailDR);
 			}
-			ispVMStateMachine( g_ucEndDR );
+			ispVMStateMachine(g_ucEndDR);
 		}
 		break;
-    default:
+	default:
 		break;
 	}
-	
-	return ( cRetCode );
+
+	return (cRetCode);
 }
 
 /***************************************************************
@@ -1549,18 +1507,17 @@ static signed char ispVMShift( signed char a_cCode )
 *
 ***************************************************************/
 
-static signed char ispVMAmble( signed char Code )
+static signed char ispVMAmble(signed char Code)
 {
 	signed char compress = 0;
 	//09/11/07 NN Type cast mismatch variables
 	g_usiDataSize = (unsigned short)ispVMDataSize();
-	
+
 #ifdef VME_DEBUG
-	printf( "%d", g_usiDataSize );
+	printf("%d", g_usiDataSize);
 #endif //VME_DEBUG
 
-	if ( g_usiDataSize ) {
-
+	if (g_usiDataSize) {
 		/****************************************************************************
 		*
 		* Discard the TDI byte and set the compression bit in the data type register
@@ -1570,13 +1527,13 @@ static signed char ispVMAmble( signed char Code )
 		*****************************************************************************/
 
 		GetByte();
-		if ( g_usDataType & COMPRESS ) {
-			g_usDataType &= ~( COMPRESS );
+		if (g_usDataType & COMPRESS) {
+			g_usDataType &= ~(COMPRESS);
 			compress = 1;
 		}
 	}
-	
-	switch ( Code ) {
+
+	switch (Code) {
 	case HIR:
 
 		/****************************************************************************
@@ -1585,10 +1542,10 @@ static signed char ispVMAmble( signed char Code )
 		*
 		*****************************************************************************/
 
-		if ( g_usiDataSize > g_usHIRSize ) {
+		if (g_usiDataSize > g_usHIRSize) {
 			g_usHIRSize = g_usiDataSize;
 		}
-		
+
 		/****************************************************************************
 		*
 		* Assign the HIR value and allocate memory.
@@ -1596,13 +1553,13 @@ static signed char ispVMAmble( signed char Code )
 		*****************************************************************************/
 
 		g_usHeadIR = g_usiDataSize;
-		if ( g_usHeadIR ) {
-			ispVMMemManager( HIR, g_usHeadIR );
-			ispVMData( g_pucHIRData );
+		if (g_usHeadIR) {
+			ispVMMemManager(HIR, g_usHeadIR);
+			ispVMData(g_pucHIRData);
 
 #ifdef VME_DEBUG
-			printf( " TDI " );
-			PrintData( g_usHeadIR, g_pucHIRData );
+			printf(" TDI ");
+			PrintData(g_usHeadIR, g_pucHIRData);
 #endif //VME_DEBUG
 		}
 		break;
@@ -1614,10 +1571,10 @@ static signed char ispVMAmble( signed char Code )
 		*
 		*****************************************************************************/
 
-		if ( g_usiDataSize > g_usTIRSize ) {
+		if (g_usiDataSize > g_usTIRSize) {
 			g_usTIRSize = g_usiDataSize;
 		}
-		
+
 		/****************************************************************************
 		*
 		* Assign the TIR value and allocate memory.
@@ -1625,13 +1582,13 @@ static signed char ispVMAmble( signed char Code )
 		*****************************************************************************/
 
 		g_usTailIR = g_usiDataSize;
-		if ( g_usTailIR ) {
-			ispVMMemManager( TIR, g_usTailIR );
-			ispVMData( g_pucTIRData );
+		if (g_usTailIR) {
+			ispVMMemManager(TIR, g_usTailIR);
+			ispVMData(g_pucTIRData);
 
 #ifdef VME_DEBUG
-			printf( " TDI " );
-			PrintData( g_usTailIR, g_pucTIRData );
+			printf(" TDI ");
+			PrintData(g_usTailIR, g_pucTIRData);
 #endif //VME_DEBUG
 		}
 		break;
@@ -1643,10 +1600,10 @@ static signed char ispVMAmble( signed char Code )
 		*
 		*****************************************************************************/
 
-		if ( g_usiDataSize > g_usHDRSize ) {
+		if (g_usiDataSize > g_usHDRSize) {
 			g_usHDRSize = g_usiDataSize;
 		}
-		
+
 		/****************************************************************************
 		*
 		* Assign the HDR value and allocate memory.
@@ -1654,13 +1611,13 @@ static signed char ispVMAmble( signed char Code )
 		*****************************************************************************/
 
 		g_usHeadDR = g_usiDataSize;
-		if ( g_usHeadDR ) {
-			ispVMMemManager( HDR, g_usHeadDR );
-			ispVMData( g_pucHDRData );
+		if (g_usHeadDR) {
+			ispVMMemManager(HDR, g_usHeadDR);
+			ispVMData(g_pucHDRData);
 
 #ifdef VME_DEBUG
-			printf( " TDI " );
-			PrintData( g_usHeadDR, g_pucHDRData );
+			printf(" TDI ");
+			PrintData(g_usHeadDR, g_pucHDRData);
 #endif //VME_DEBUG
 		}
 		break;
@@ -1672,10 +1629,10 @@ static signed char ispVMAmble( signed char Code )
 		*
 		*****************************************************************************/
 
-		if ( g_usiDataSize > g_usTDRSize ) {
+		if (g_usiDataSize > g_usTDRSize) {
 			g_usTDRSize = g_usiDataSize;
 		}
-		
+
 		/****************************************************************************
 		*
 		* Assign the TDR value and allocate memory.
@@ -1683,13 +1640,13 @@ static signed char ispVMAmble( signed char Code )
 		*****************************************************************************/
 
 		g_usTailDR = g_usiDataSize;
-		if ( g_usTailDR ) {
-			ispVMMemManager( TDR, g_usTailDR );
-			ispVMData( g_pucTDRData );
+		if (g_usTailDR) {
+			ispVMMemManager(TDR, g_usTailDR);
+			ispVMData(g_pucTDRData);
 
 #ifdef VME_DEBUG
-			printf( " TDI " );
-			PrintData( g_usTailDR, g_pucTDRData );
+			printf(" TDI ");
+			PrintData(g_usTailDR, g_pucTDRData);
 #endif //VME_DEBUG
 		}
 		break;
@@ -1703,24 +1660,22 @@ static signed char ispVMAmble( signed char Code )
 	*
 	*****************************************************************************/
 
-	if ( compress ) {
+	if (compress) {
 		g_usDataType |= COMPRESS;
 	}
 
-	if ( g_usiDataSize ) {
+	if (g_usiDataSize) {
 		Code = GetByte();
-		if ( Code == CONTINUE ) {
+		if (Code == CONTINUE) {
 			return 0;
-		}
-		else {
-
+		} else {
 			/****************************************************************************
 			*
 			* Encountered invalid opcode.
 			*
 			*****************************************************************************/
 
-			return VME_INVALID_FILE; 
+			return VME_INVALID_FILE;
 		}
 	}
 
@@ -1742,34 +1697,34 @@ static signed char ispVMAmble( signed char Code )
 static signed char ispVMLoop(unsigned short a_usLoopCount)
 {
 	//09/11/07 NN added local variables initialization
-	signed char cRetCode      = 0;
+	signed char cRetCode = 0;
 	unsigned short iHeapIndex = 0;
 	unsigned short iLoopIndex = 0;
-	
+
 	g_usShiftValue = 0;
-	for ( iHeapIndex = 0; iHeapIndex < g_iHEAPSize; iHeapIndex++ ) {
-		g_pucHeapMemory[ iHeapIndex ] = GetByte();
+	for (iHeapIndex = 0; iHeapIndex < g_iHEAPSize; iHeapIndex++) {
+		g_pucHeapMemory[iHeapIndex] = GetByte();
 	}
-	
-	if ( g_pucHeapMemory[ iHeapIndex - 1 ] != ENDLOOP ) {
-		return( VME_INVALID_FILE );
+
+	if (g_pucHeapMemory[iHeapIndex - 1] != ENDLOOP) {
+		return (VME_INVALID_FILE);
 	}
-	
+
 	g_usFlowControl |= REPEATLOOP;
-	g_usDataType |= HEAP_IN; 
-	
-	for ( iLoopIndex = 0; iLoopIndex < a_usLoopCount; iLoopIndex++ ) {
+	g_usDataType |= HEAP_IN;
+
+	for (iLoopIndex = 0; iLoopIndex < a_usLoopCount; iLoopIndex++) {
 		g_iHeapCounter = 0;
 		cRetCode = ispVMCode();
 		g_usRepeatLoops++;
-		if ( cRetCode < 0 ) {
+		if (cRetCode < 0) {
 			break;
 		}
 	}
 
-	g_usDataType &= ~( HEAP_IN );
-	g_usFlowControl &= ~( REPEATLOOP );
-	return ( cRetCode );
+	g_usDataType &= ~(HEAP_IN);
+	g_usFlowControl &= ~(REPEATLOOP);
+	return (cRetCode);
 }
 
 /***************************************************************
@@ -1785,23 +1740,22 @@ static signed char ispVMLoop(unsigned short a_usLoopCount)
 static signed char ispVMBitShift(signed char mode, unsigned short bits)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short i       = 0;
-	unsigned short size    = 0;
+	unsigned short i = 0;
+	unsigned short size = 0;
 	unsigned short tmpbits = 0;
 
-	if (g_usiDataSize%8>0) {
+	if (g_usiDataSize % 8 > 0) {
 		//09/11/07 NN Type cast mismatch variables
-		size = (unsigned short)(g_usiDataSize/8 + 1);
-	}
-	else {
+		size = (unsigned short)(g_usiDataSize / 8 + 1);
+	} else {
 		//09/11/07 NN Type cast mismatch variables
-		size = (unsigned short)(g_usiDataSize/8);
+		size = (unsigned short)(g_usiDataSize / 8);
 	}
 
-	switch(mode) {
+	switch (mode) {
 	case SHR:
 		for (i = 0; i < size; i++) {
-			if (g_pucInData[i] != 0) {			
+			if (g_pucInData[i] != 0) {
 				tmpbits = bits;
 				while (tmpbits > 0) {
 					g_pucInData[i] <<= 1;
@@ -1816,7 +1770,7 @@ static signed char ispVMBitShift(signed char mode, unsigned short bits)
 		break;
 	case SHL:
 		for (i = 0; i < size; i++) {
-			if (g_pucInData[i] != 0) {			
+			if (g_pucInData[i] != 0) {
 				tmpbits = bits;
 				while (tmpbits > 0) {
 					g_pucInData[i] >>= 1;
@@ -1829,8 +1783,8 @@ static signed char ispVMBitShift(signed char mode, unsigned short bits)
 			}
 		}
 		break;
-	default: 
-		return ( VME_INVALID_FILE );
+	default:
+		return (VME_INVALID_FILE);
 	}
 
 	return (0);
@@ -1844,10 +1798,10 @@ static signed char ispVMBitShift(signed char mode, unsigned short bits)
 *
 ***************************************************************/
 
-static void ispVMComment( unsigned short a_usCommentSize )
+static void ispVMComment(unsigned short a_usCommentSize)
 {
-	//char cCurByte = 0; 
-	for ( ; a_usCommentSize > 0; a_usCommentSize-- ) {
+	//char cCurByte = 0;
+	for (; a_usCommentSize > 0; a_usCommentSize--) {
 		/****************************************************************************
 		*
 		* Print character to the terminal.
@@ -1855,10 +1809,10 @@ static void ispVMComment( unsigned short a_usCommentSize )
 		*****************************************************************************/
 		GetByte();
 		//cCurByte = GetByte();
-//		vme_out_char( cCurByte );
+		//		vme_out_char( cCurByte );
 	}
-//	cCurByte = '\n';
-//	vme_out_char(cCurByte );
+	//	cCurByte = '\n';
+	//	vme_out_char(cCurByte );
 }
 
 /***************************************************************
@@ -1869,9 +1823,9 @@ static void ispVMComment( unsigned short a_usCommentSize )
 *
 ***************************************************************/
 
-static void ispVMHeader( unsigned short a_usHeaderSize )
+static void ispVMHeader(unsigned short a_usHeaderSize)
 {
-	for ( ; a_usHeaderSize > 0; a_usHeaderSize-- ) {
+	for (; a_usHeaderSize > 0; a_usHeaderSize--) {
 		GetByte();
 	}
 }
@@ -1924,16 +1878,16 @@ static void ispVMHeader( unsigned short a_usHeaderSize )
 *
 ***************************************************************/
 
-static signed char ispVMLCOUNT( unsigned short a_usCountSize )
+static signed char ispVMLCOUNT(unsigned short a_usCountSize)
 {
 	//09/11/07 NN added local variables initialization
 	unsigned short usIntelBufferIndex = 0;
-	unsigned short usCountIndex       = 0;
-	signed char cRetCode              = 0;
-	signed char cRepeatHeap           = 0;
+	unsigned short usCountIndex = 0;
+	signed char cRetCode = 0;
+	signed char cRepeatHeap = 0;
 
 	//09/11/07 NN Type cast mismatch variables
-	g_usIntelBufferSize = (unsigned short) ispVMDataSize();
+	g_usIntelBufferSize = (unsigned short)ispVMDataSize();
 
 	/****************************************************************************
 	*
@@ -1941,7 +1895,7 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	*
 	*****************************************************************************/
 
-	ispVMMemManager( LHEAP, g_usIntelBufferSize );
+	ispVMMemManager(LHEAP, g_usIntelBufferSize);
 
 	/****************************************************************************
 	*
@@ -1949,7 +1903,7 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	*
 	*****************************************************************************/
 
-	if ( g_usIntelBufferSize > g_usLCOUNTSize ) {
+	if (g_usIntelBufferSize > g_usLCOUNTSize) {
 		g_usLCOUNTSize = g_usIntelBufferSize;
 	}
 
@@ -1959,8 +1913,8 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	*
 	*****************************************************************************/
 
-	for ( usIntelBufferIndex = 0; usIntelBufferIndex < g_usIntelBufferSize; usIntelBufferIndex++ ) {
-		g_pucIntelBuffer[ usIntelBufferIndex ] = GetByte();
+	for (usIntelBufferIndex = 0; usIntelBufferIndex < g_usIntelBufferSize; usIntelBufferIndex++) {
+		g_pucIntelBuffer[usIntelBufferIndex] = GetByte();
 	}
 
 	/****************************************************************************
@@ -1978,13 +1932,13 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	*
 	*****************************************************************************/
 
-	if ( g_usDataType & HEAP_IN ) {
+	if (g_usDataType & HEAP_IN) {
 		g_usDataType &= ~HEAP_IN;
 		cRepeatHeap = 1;
 	}
 
 #ifdef VME_DEBUG
-	printf( "LCOUNT %d;\n", a_usCountSize );
+	printf("LCOUNT %d;\n", a_usCountSize);
 #endif //VME_DEBUG
 
 	/****************************************************************************
@@ -1992,9 +1946,8 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	* Iterate through the intelligent programming command.
 	*
 	*****************************************************************************/
-	
-	for ( usCountIndex = 0; usCountIndex < a_usCountSize; usCountIndex++ ) {
 
+	for (usCountIndex = 0; usCountIndex < a_usCountSize; usCountIndex++) {
 		/****************************************************************************
 		*
 		* Initialize the intel data index to 0 before each iteration.
@@ -2010,8 +1963,7 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 		*****************************************************************************/
 
 		cRetCode = ispVMCode();
-		if ( cRetCode >= 0 ) {
-
+		if (cRetCode >= 0) {
 			/****************************************************************************
 			*
 			* Break if intelligent programming is successful.
@@ -2028,7 +1980,7 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 	*
 	*****************************************************************************/
 
-	if ( cRepeatHeap ) {
+	if (cRepeatHeap) {
 		g_usDataType |= HEAP_IN;
 	}
 
@@ -2050,10 +2002,10 @@ static signed char ispVMLCOUNT( unsigned short a_usCountSize )
 *
 ***************************************************************/
 
-static void ispVMClocks( unsigned short Clocks )
+static void ispVMClocks(unsigned short Clocks)
 {
 	unsigned short iClockIndex = 0;
-	for ( iClockIndex = 0; iClockIndex < Clocks; iClockIndex++ ) {
+	for (iClockIndex = 0; iClockIndex < Clocks; iClockIndex++) {
 		sclock();
 	}
 }
@@ -2071,20 +2023,20 @@ static void ispVMClocks( unsigned short Clocks )
 *
 ***************************************************************/
 
-static void ispVMBypass( signed char ScanType, unsigned short Bits )
+static void ispVMBypass(signed char ScanType, unsigned short Bits)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short iIndex       = 0;
+	unsigned short iIndex = 0;
 	unsigned short iSourceIndex = 0;
-	unsigned char cBitState     = 0;
-	unsigned char cCurByte      = 0;   
-	unsigned char * pcSource    = NULL;
-	
-	if ( Bits <= 0 ) {
+	unsigned char cBitState = 0;
+	unsigned char cCurByte = 0;
+	unsigned char *pcSource = NULL;
+
+	if (Bits <= 0) {
 		return;
 	}
 
-	switch ( ScanType ) {
+	switch (ScanType) {
 	case HIR:
 		pcSource = g_pucHIRData;
 		break;
@@ -2100,25 +2052,25 @@ static void ispVMBypass( signed char ScanType, unsigned short Bits )
 	default:
 		break;
 	}
-	
+
 	iSourceIndex = 0;
 	cBitState = 0;
-	for ( iIndex = 0; iIndex < Bits - 1; iIndex++ ) {
+	for (iIndex = 0; iIndex < Bits - 1; iIndex++) {
 		/* Scan instruction or bypass register */
-		if ( iIndex % 8 == 0 ) {
-			cCurByte = pcSource[ iSourceIndex++ ];
+		if (iIndex % 8 == 0) {
+			cCurByte = pcSource[iSourceIndex++];
 		}
-		cBitState = ( unsigned char ) ( ( ( cCurByte << iIndex % 8 ) & 0x80 ) ? 0x01 : 0x00 );
-		writePort( g_ucPinTDI, cBitState );
+		cBitState = (unsigned char)(((cCurByte << iIndex % 8) & 0x80) ? 0x01 : 0x00);
+		writePort(g_ucPinTDI, cBitState);
 		sclock();
-	}   
-
-	if ( iIndex % 8 == 0 )  {
-		cCurByte = pcSource[ iSourceIndex++ ];
 	}
 
-	cBitState = ( unsigned char ) ( ( ( cCurByte << iIndex % 8 ) & 0x80 ) ? 0x01 : 0x00 );
-	writePort( g_ucPinTDI, cBitState );
+	if (iIndex % 8 == 0) {
+		cCurByte = pcSource[iSourceIndex++];
+	}
+
+	cBitState = (unsigned char)(((cCurByte << iIndex % 8) & 0x80) ? 0x01 : 0x00);
+	writePort(g_ucPinTDI, cBitState);
 }
 
 /***************************************************************
@@ -2132,35 +2084,35 @@ static void ispVMBypass( signed char ScanType, unsigned short Bits )
 *
 ***************************************************************/
 
-static void ispVMStateMachine( signed char cNextJTAGState )
+static void ispVMStateMachine(signed char cNextJTAGState)
 {
 	//09/11/07 NN added local variables initialization
-	signed char cPathIndex  = 0;
+	signed char cPathIndex = 0;
 	signed char cStateIndex = 0;
-	
-	if ( ( g_cCurrentJTAGState == cNextJTAGState ) && ( cNextJTAGState != RESET ) ) {
+
+	if ((g_cCurrentJTAGState == cNextJTAGState) && (cNextJTAGState != RESET)) {
 		return;
 	}
-	
-	for ( cStateIndex = 0; cStateIndex < 25; cStateIndex++ ) {
-		if ( ( g_cCurrentJTAGState == g_JTAGTransistions[ cStateIndex ].CurState ) && ( cNextJTAGState == g_JTAGTransistions[cStateIndex].NextState ) ) {
+
+	for (cStateIndex = 0; cStateIndex < 25; cStateIndex++) {
+		if ((g_cCurrentJTAGState == g_JTAGTransistions[cStateIndex].CurState) &&
+		    (cNextJTAGState == g_JTAGTransistions[cStateIndex].NextState)) {
 			break;
 		}
 	}
 
 	g_cCurrentJTAGState = cNextJTAGState;
-	for ( cPathIndex = 0; cPathIndex < g_JTAGTransistions[ cStateIndex ].Pulses; cPathIndex++ ) {
-		if ( ( g_JTAGTransistions[ cStateIndex ].Pattern << cPathIndex ) & 0x80 ) {
-			writePort( g_ucPinTMS, ( unsigned char ) 0x01 );
-		}
-		else {
-			writePort( g_ucPinTMS, ( unsigned char ) 0x00 );
+	for (cPathIndex = 0; cPathIndex < g_JTAGTransistions[cStateIndex].Pulses; cPathIndex++) {
+		if ((g_JTAGTransistions[cStateIndex].Pattern << cPathIndex) & 0x80) {
+			writePort(g_ucPinTMS, (unsigned char)0x01);
+		} else {
+			writePort(g_ucPinTMS, (unsigned char)0x00);
 		}
 		sclock();
 	}
-	
-	writePort( g_ucPinTDI, 0x00 );
-	writePort( g_ucPinTMS, 0x00 );
+
+	writePort(g_ucPinTDI, 0x00);
+	writePort(g_ucPinTMS, 0x00);
 }
 
 /***************************************************************
@@ -2174,11 +2126,11 @@ static void ispVMStateMachine( signed char cNextJTAGState )
 static void ispVMStart()
 {
 #ifdef VME_DEBUG
-	printf( "// ISPVM EMBEDDED ADDED\n" );
-	printf( "STATE RESET;\n" );
+	printf("// ISPVM EMBEDDED ADDED\n");
+	printf("STATE RESET;\n");
 #endif
 
-	ispVMStateMachine( RESET );    /*step devices to RESET state*/
+	ispVMStateMachine(RESET); /*step devices to RESET state*/
 }
 
 /***************************************************************
@@ -2193,13 +2145,13 @@ static void ispVMStart()
 static void ispVMEnd()
 {
 #ifdef VME_DEBUG
-	printf( "// ISPVM EMBEDDED ADDED\n" );
-	printf( "STATE RESET;\n" );
-	printf( "RUNTEST 1.00E-001 SEC;\n" );
+	printf("// ISPVM EMBEDDED ADDED\n");
+	printf("STATE RESET;\n");
+	printf("RUNTEST 1.00E-001 SEC;\n");
 #endif
 
-	ispVMStateMachine( RESET );   /*step devices to RESET state */
-	ispVMDelay( 1000 );              /*wake up devices*/
+	ispVMStateMachine(RESET); /*step devices to RESET state */
+	ispVMDelay(1000); /*wake up devices*/
 }
 
 /***************************************************************
@@ -2211,32 +2163,32 @@ static void ispVMEnd()
 *
 ***************************************************************/
 
-static signed char ispVMSend( unsigned short a_usiDataSize )
+static signed char ispVMSend(unsigned short a_usiDataSize)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short iIndex       = 0;
+	unsigned short iIndex = 0;
 	unsigned short iInDataIndex = 0;
-	unsigned char cCurByte      = 0;
-	unsigned char cBitState     = 0;
-	
-	for ( iIndex = 0; iIndex < a_usiDataSize - 1; iIndex++ ) { 
-		if ( iIndex % 8 == 0 ) { 
-			cCurByte = g_pucInData[ iInDataIndex++ ];
+	unsigned char cCurByte = 0;
+	unsigned char cBitState = 0;
+
+	for (iIndex = 0; iIndex < a_usiDataSize - 1; iIndex++) {
+		if (iIndex % 8 == 0) {
+			cCurByte = g_pucInData[iInDataIndex++];
 		}
-		cBitState = ( unsigned char ) ( ( ( cCurByte << iIndex % 8 ) & 0x80 ) ? 0x01 : 0x00 );
-		writePort( g_ucPinTDI, cBitState );
+		cBitState = (unsigned char)(((cCurByte << iIndex % 8) & 0x80) ? 0x01 : 0x00);
+		writePort(g_ucPinTDI, cBitState);
 		sclock();
 	}
 
-	if ( iIndex % 8 == 0 ) {
+	if (iIndex % 8 == 0) {
 		/* Take care of the last bit */
-		cCurByte = g_pucInData[ iInDataIndex ]; 
+		cCurByte = g_pucInData[iInDataIndex];
 	}
 
-	cBitState = ( unsigned char ) ( ( ( cCurByte << iIndex % 8 ) & 0x80 ) ? 0x01 : 0x00 );
+	cBitState = (unsigned char)(((cCurByte << iIndex % 8) & 0x80) ? 0x01 : 0x00);
 
-	writePort( g_ucPinTDI, cBitState );
-	if ( g_usFlowControl & CASCADE ) {
+	writePort(g_ucPinTDI, cBitState);
+	if (g_usFlowControl & CASCADE) {
 		/* 1/15/04 Clock in last bit for the first n-1 cascaded frames */
 		sclock();
 	}
@@ -2252,24 +2204,24 @@ static signed char ispVMSend( unsigned short a_usiDataSize )
 *
 ***************************************************************/
 
-static signed char ispVMRead( unsigned short a_usiDataSize )
+static signed char ispVMRead(unsigned short a_usiDataSize)
 {
 	//09/11/07 NN added local variables initialization
-	unsigned short usDataSizeIndex    = 0;
-	unsigned short usErrorCount       = 0;
-	unsigned short usLastBitIndex     = 0;
-	unsigned char cDataByte           = 0;
-	unsigned char cMaskByte           = 0;
-	unsigned char cInDataByte         = 0;
-	unsigned char cCurBit             = 0;
-	unsigned char cByteIndex          = 0;
-	unsigned short usBufferIndex      = 0;
-	unsigned char ucDisplayByte       = 0x00;
-	unsigned char ucDisplayFlag       = 0x01;
+	unsigned short usDataSizeIndex = 0;
+	unsigned short usErrorCount = 0;
+	unsigned short usLastBitIndex = 0;
+	unsigned char cDataByte = 0;
+	unsigned char cMaskByte = 0;
+	unsigned char cInDataByte = 0;
+	unsigned char cCurBit = 0;
+	unsigned char cByteIndex = 0;
+	unsigned short usBufferIndex = 0;
+	unsigned char ucDisplayByte = 0x00;
+	unsigned char ucDisplayFlag = 0x01;
 
 	//09/11/07 NN Type cast mismatch variables
 	usLastBitIndex = (unsigned short)(a_usiDataSize - 1);
-	
+
 #ifndef VME_DEBUG
 	/****************************************************************************
 	*
@@ -2279,68 +2231,65 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 	*
 	*****************************************************************************/
 
-	for ( usDataSizeIndex = 0; usDataSizeIndex < ( a_usiDataSize + 7 ) / 8; usDataSizeIndex++ ) {
-		if ( g_usDataType & MASK_DATA ) {
-			if ( g_pucOutMaskData[ usDataSizeIndex ] != 0x00 ) {
+	for (usDataSizeIndex = 0; usDataSizeIndex < (a_usiDataSize + 7) / 8; usDataSizeIndex++) {
+		if (g_usDataType & MASK_DATA) {
+			if (g_pucOutMaskData[usDataSizeIndex] != 0x00) {
 				ucDisplayFlag = 0x00;
 				break;
 			}
-		}
-		else {
+		} else {
 			ucDisplayFlag = 0x00;
 			break;
 		}
 	}
 #endif //VME_DEBUG
-	
+
 	/****************************************************************************
 	*
 	* Begin shifting data in and out of the device.
 	*
 	*****************************************************************************/
 
-	for ( usDataSizeIndex = 0; usDataSizeIndex < a_usiDataSize; usDataSizeIndex++ ) { 
-		if ( cByteIndex == 0 ) {
-
+	for (usDataSizeIndex = 0; usDataSizeIndex < a_usiDataSize; usDataSizeIndex++) {
+		if (cByteIndex == 0) {
 			/***************************************************************
 			*
 			* Grab byte from TDO buffer.
 			*
 			***************************************************************/
 
-			if ( g_usDataType & TDO_DATA ) {
-				cDataByte = g_pucOutData[ usBufferIndex ];
+			if (g_usDataType & TDO_DATA) {
+				cDataByte = g_pucOutData[usBufferIndex];
 			}
-			
+
 			/***************************************************************
 			*
 			* Grab byte from MASK buffer.
 			*
 			***************************************************************/
 
-			if ( g_usDataType & MASK_DATA ) {
-				cMaskByte = g_pucOutMaskData[ usBufferIndex ];
-			}
-			else { 
+			if (g_usDataType & MASK_DATA) {
+				cMaskByte = g_pucOutMaskData[usBufferIndex];
+			} else {
 				cMaskByte = 0xFF;
 			}
-          
+
 			/***************************************************************
 			*
 			* Grab byte from TDI buffer.
 			*
 			***************************************************************/
 
-			if ( g_usDataType & TDI_DATA ) {
-				cInDataByte = g_pucInData[ usBufferIndex ];
+			if (g_usDataType & TDI_DATA) {
+				cInDataByte = g_pucInData[usBufferIndex];
 			}
-			
+
 			usBufferIndex++;
 		}
-		
+
 		cCurBit = readPort();
 
-		if ( ucDisplayFlag ) {
+		if (ucDisplayFlag) {
 			ucDisplayByte <<= 1;
 			ucDisplayByte |= cCurBit;
 		}
@@ -2351,10 +2300,10 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 		*
 		*****************************************************************************/
 
-		if ( g_usDataType & TDO_DATA ) {
-			if ( ( ( ( cMaskByte << cByteIndex ) & 0x80 ) ? 0x01 : 0x00 ) ) {	
-				if ( cCurBit != ( unsigned char ) ( ( ( cDataByte << cByteIndex ) & 0x80 ) ? 0x01 : 0x00 ) ) {
-					usErrorCount++;  
+		if (g_usDataType & TDO_DATA) {
+			if ((((cMaskByte << cByteIndex) & 0x80) ? 0x01 : 0x00)) {
+				if (cCurBit != (unsigned char)(((cDataByte << cByteIndex) & 0x80) ? 0x01 : 0x00)) {
+					usErrorCount++;
 				}
 			}
 		}
@@ -2364,11 +2313,10 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 		* Write TDI data to the port.
 		*
 		*****************************************************************************/
-		
-		writePort( g_ucPinTDI, ( unsigned char ) ( ( ( cInDataByte << cByteIndex ) & 0x80 ) ? 0x01 : 0x00 ) );
-		
-		if ( usDataSizeIndex < usLastBitIndex ) {
 
+		writePort(g_ucPinTDI, (unsigned char)(((cInDataByte << cByteIndex) & 0x80) ? 0x01 : 0x00));
+
+		if (usDataSizeIndex < usLastBitIndex) {
 			/****************************************************************************
 			*
 			* Clock data out from the data shift register.
@@ -2376,9 +2324,7 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 			*****************************************************************************/
 
 			sclock();
-		}
-		else if ( g_usFlowControl & CASCADE ) {
-			
+		} else if (g_usFlowControl & CASCADE) {
 			/****************************************************************************
 			*
 			* Clock in last bit for the first N - 1 cascaded frames.
@@ -2396,9 +2342,8 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 		***************************************************************/
 
 		cByteIndex++;
-		if ( cByteIndex >= 8 ) {
-			if ( ucDisplayFlag ) {
-
+		if (cByteIndex >= 8) {
+			if (ucDisplayFlag) {
 				/***************************************************************
 				*
 				* Store displayed data in the TDO buffer. By reusing the TDO
@@ -2409,17 +2354,15 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 				*
 				***************************************************************/
 
-				g_pucOutData[ usBufferIndex - 1 ] = ucDisplayByte;
+				g_pucOutData[usBufferIndex - 1] = ucDisplayByte;
 				ucDisplayByte = 0;
 			}
 
 			cByteIndex = 0;
 		}
 		//09/12/07 Nguyen changed to display the 1 bit expected data
-		else if(a_usiDataSize == 1)
-		{
-			if ( ucDisplayFlag ) {
-
+		else if (a_usiDataSize == 1) {
+			if (ucDisplayFlag) {
 				/***************************************************************
 				*
 				* Store displayed data in the TDO buffer. By reusing the TDO
@@ -2436,14 +2379,14 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 				*
 				*****************************************************************************/
 				cDataByte = 0x00;
-				for ( usBufferIndex = 0; usBufferIndex < 8; usBufferIndex++ ) {
+				for (usBufferIndex = 0; usBufferIndex < 8; usBufferIndex++) {
 					cDataByte <<= 1;
-					if ( ucDisplayByte & 0x01 ) {
+					if (ucDisplayByte & 0x01) {
 						cDataByte |= 0x01;
 					}
 					ucDisplayByte >>= 1;
 				}
-				g_pucOutData[ 0 ] = cDataByte;
+				g_pucOutData[0] = cDataByte;
 				ucDisplayByte = 0;
 			}
 
@@ -2451,29 +2394,24 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 		}
 	}
 
-
-	if ( usErrorCount > 0 ) {
-		if ( g_usFlowControl & VERIFYUES ) {
+	if (usErrorCount > 0) {
+		if (g_usFlowControl & VERIFYUES) {
 			//vme_out_string( "USERCODE verification failed.  Continue programming......\n\n" );
-			g_usFlowControl &= ~( VERIFYUES );
+			g_usFlowControl &= ~(VERIFYUES);
 			return 0;
-		}
-		else {
-
+		} else {
 #ifdef VME_DEBUG
-			printf( "TOTAL ERRORS: %d\n", usErrorCount );
+			printf("TOTAL ERRORS: %d\n", usErrorCount);
 #endif //VME_DEBUG
 
 			return VME_VERIFICATION_FAILURE;
 		}
-	}
-	else {
-		if ( g_usFlowControl & VERIFYUES ) {
+	} else {
+		if (g_usFlowControl & VERIFYUES) {
 			//vme_out_string( "USERCODE verification passed.  Programming aborted. \n\n" );
-			g_usFlowControl &= ~( VERIFYUES );
+			g_usFlowControl &= ~(VERIFYUES);
 			return 1;
-		}
-		else {
+		} else {
 			return 0;
 		}
 	}
@@ -2487,61 +2425,59 @@ static signed char ispVMRead( unsigned short a_usiDataSize )
 *
 ***************************************************************/
 
-static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
+static signed char ispVMReadandSave(unsigned short int a_usiDataSize)
 {
 	//09/11/07 NN added local variables initialization
 	unsigned short int usDataSizeIndex = 0;
-	unsigned short int usLastBitIndex  = 0;
-	unsigned short int usBufferIndex   = 0;
-	unsigned short int usOutBitIndex   = 0;
-	unsigned short int usLVDSIndex     = 0;
-	unsigned char cDataByte            = 0;
-	unsigned char cDMASKByte           = 0;
-	unsigned char cInDataByte          = 0;
-	unsigned char cCurBit              = 0;
-	unsigned char cByteIndex           = 0;
-	signed char cLVDSByteIndex         = 0;
+	unsigned short int usLastBitIndex = 0;
+	unsigned short int usBufferIndex = 0;
+	unsigned short int usOutBitIndex = 0;
+	unsigned short int usLVDSIndex = 0;
+	unsigned char cDataByte = 0;
+	unsigned char cDMASKByte = 0;
+	unsigned char cInDataByte = 0;
+	unsigned char cCurBit = 0;
+	unsigned char cByteIndex = 0;
+	signed char cLVDSByteIndex = 0;
 
 	//09/11/07 NN Type cast mismatch variables
-	usLastBitIndex = (unsigned short) (a_usiDataSize - 1);
-	
+	usLastBitIndex = (unsigned short)(a_usiDataSize - 1);
+
 	/***************************************************************
 	*
 	* Iterate through the data bits.
 	*
 	***************************************************************/
 
-	for ( usDataSizeIndex = 0; usDataSizeIndex < a_usiDataSize; usDataSizeIndex++ ) {
-		if ( cByteIndex == 0 ) {
-
+	for (usDataSizeIndex = 0; usDataSizeIndex < a_usiDataSize; usDataSizeIndex++) {
+		if (cByteIndex == 0) {
 			/***************************************************************
 			*
 			* Grab byte from DMASK buffer.
 			*
 			***************************************************************/
 
-			if ( g_usDataType & DMASK_DATA ) {
-				cDMASKByte = g_pucOutDMaskData[ usBufferIndex ];
-			}
-			else { 
+			if (g_usDataType & DMASK_DATA) {
+				cDMASKByte = g_pucOutDMaskData[usBufferIndex];
+			} else {
 				cDMASKByte = 0x00;
 			}
-          
+
 			/***************************************************************
 			*
 			* Grab byte from TDI buffer.
 			*
 			***************************************************************/
 
-			if ( g_usDataType & TDI_DATA ) {
-				cInDataByte = g_pucInData[ usBufferIndex ];
+			if (g_usDataType & TDI_DATA) {
+				cInDataByte = g_pucInData[usBufferIndex];
 			}
 
 			usBufferIndex++;
 		}
-		
+
 		cCurBit = readPort();
-		cDataByte = ( unsigned char ) ( ( ( cInDataByte << cByteIndex ) & 0x80 ) ? 0x01 : 0x00 );
+		cDataByte = (unsigned char)(((cInDataByte << cByteIndex) & 0x80) ? 0x01 : 0x00);
 
 		/***************************************************************
 		*
@@ -2549,8 +2485,8 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 		*
 		***************************************************************/
 
-		if ( usOutBitIndex % 8 == 0 ) {
-			g_pucOutData[ usOutBitIndex / 8 ] = 0x00;
+		if (usOutBitIndex % 8 == 0) {
+			g_pucOutData[usOutBitIndex / 8] = 0x00;
 		}
 
 		/***************************************************************
@@ -2560,12 +2496,11 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 		*
 		***************************************************************/
 
-		if ( ( ( ( cDMASKByte << cByteIndex ) & 0x80 ) ? 0x01 : 0x00 ) ) {
-
-			if ( g_pLVDSList ) {
-				for ( usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++ ) {
-					if ( g_pLVDSList[ usLVDSIndex ].usNegativeIndex == usDataSizeIndex ) {
-						g_pLVDSList[ usLVDSIndex ].ucUpdate = 0x01;
+		if ((((cDMASKByte << cByteIndex) & 0x80) ? 0x01 : 0x00)) {
+			if (g_pLVDSList) {
+				for (usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++) {
+					if (g_pLVDSList[usLVDSIndex].usNegativeIndex == usDataSizeIndex) {
+						g_pLVDSList[usLVDSIndex].ucUpdate = 0x01;
 						break;
 					}
 				}
@@ -2577,17 +2512,17 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 			*
 			***************************************************************/
 
-			g_pucOutData[ usOutBitIndex / 8 ] |= ( unsigned char ) ( ( ( cDataByte & 0x1 ) ? 0x01 : 0x00 ) << ( 7 - usOutBitIndex % 8 ) );
-		}
-		else {
-
+			g_pucOutData[usOutBitIndex / 8] |=
+				(unsigned char)(((cDataByte & 0x1) ? 0x01 : 0x00) << (7 - usOutBitIndex % 8));
+		} else {
 			/***************************************************************
 			*
 			* DMASK bit is 0, use device TDO.
 			*
 			***************************************************************/
 
-			g_pucOutData[ usOutBitIndex / 8 ] |= ( unsigned char ) ( ( ( cCurBit & 0x1 ) ? 0x01 : 0x00 ) << ( 7 - usOutBitIndex % 8 ) );
+			g_pucOutData[usOutBitIndex / 8] |=
+				(unsigned char)(((cCurBit & 0x1) ? 0x01 : 0x00) << (7 - usOutBitIndex % 8));
 		}
 
 		/***************************************************************
@@ -2597,8 +2532,8 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 		***************************************************************/
 
 		usOutBitIndex++;
-		writePort( g_ucPinTDI, cDataByte );
-		if ( usDataSizeIndex < usLastBitIndex ) {
+		writePort(g_ucPinTDI, cDataByte);
+		if (usDataSizeIndex < usLastBitIndex) {
 			sclock();
 		}
 
@@ -2610,7 +2545,7 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 		***************************************************************/
 
 		cByteIndex++;
-		if ( cByteIndex >= 8 ) {
+		if (cByteIndex >= 8) {
 			cByteIndex = 0;
 		}
 	}
@@ -2622,19 +2557,22 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 	*
 	***************************************************************/
 
-	if ( g_pLVDSList ) {
-		for ( usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++ ) {
-			if ( g_pLVDSList[ usLVDSIndex ].ucUpdate ) {
-				
+	if (g_pLVDSList) {
+		for (usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++) {
+			if (g_pLVDSList[usLVDSIndex].ucUpdate) {
 				/***************************************************************
 				*
 				* Read the positive value and flip it.
 				*
 				***************************************************************/
 
-				cDataByte = ( unsigned char ) ( ( ( g_pucOutData[ g_pLVDSList[ usLVDSIndex ].usPositiveIndex / 8 ] << ( g_pLVDSList[ usLVDSIndex ].usPositiveIndex % 8 ) ) & 0x80 ) ? 0x01 : 0x00 );
+				cDataByte = (unsigned char)(((g_pucOutData[g_pLVDSList[usLVDSIndex].usPositiveIndex / 8]
+							      << (g_pLVDSList[usLVDSIndex].usPositiveIndex % 8)) &
+							     0x80) ?
+								    0x01 :
+								    0x00);
 				//09/11/07 NN Type cast mismatch variables
-				cDataByte = ( unsigned char ) (!cDataByte);
+				cDataByte = (unsigned char)(!cDataByte);
 
 				/***************************************************************
 				*
@@ -2642,10 +2580,9 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 				*
 				***************************************************************/
 
-				cInDataByte = g_pucOutData[ g_pLVDSList[ usLVDSIndex ].usNegativeIndex / 8 ];
+				cInDataByte = g_pucOutData[g_pLVDSList[usLVDSIndex].usNegativeIndex / 8];
 
-				if ( cDataByte ) {
-
+				if (cDataByte) {
 					/***************************************************************
 					*
 					* Copy over the current byte and set the negative bit to 1.
@@ -2653,10 +2590,10 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 					***************************************************************/
 
 					cDataByte = 0x00;
-					for ( cLVDSByteIndex = 7; cLVDSByteIndex >= 0; cLVDSByteIndex-- ) {
+					for (cLVDSByteIndex = 7; cLVDSByteIndex >= 0; cLVDSByteIndex--) {
 						cDataByte <<= 1;
-						if ( 7 - ( g_pLVDSList[ usLVDSIndex ].usNegativeIndex % 8 ) == cLVDSByteIndex ) {
-
+						if (7 - (g_pLVDSList[usLVDSIndex].usNegativeIndex % 8) ==
+						    cLVDSByteIndex) {
 							/***************************************************************
 							*
 							* Set negative bit to 1.
@@ -2664,8 +2601,7 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 							***************************************************************/
 
 							cDataByte |= 0x01;
-						}
-						else if ( cInDataByte & 0x80 ) {
+						} else if (cInDataByte & 0x80) {
 							cDataByte |= 0x01;
 						}
 
@@ -2678,10 +2614,8 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 					*
 					***************************************************************/
 
-					g_pucOutData[ g_pLVDSList[ usLVDSIndex ].usNegativeIndex / 8 ] = cDataByte;
-				}
-				else {
-
+					g_pucOutData[g_pLVDSList[usLVDSIndex].usNegativeIndex / 8] = cDataByte;
+				} else {
 					/***************************************************************
 					*
 					* Copy over the current byte and set the negative bit to 0.
@@ -2689,10 +2623,10 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 					***************************************************************/
 
 					cDataByte = 0x00;
-					for ( cLVDSByteIndex = 7; cLVDSByteIndex >= 0; cLVDSByteIndex-- ) {
+					for (cLVDSByteIndex = 7; cLVDSByteIndex >= 0; cLVDSByteIndex--) {
 						cDataByte <<= 1;
-						if ( 7 - ( g_pLVDSList[ usLVDSIndex ].usNegativeIndex % 8 ) == cLVDSByteIndex ) {
-
+						if (7 - (g_pLVDSList[usLVDSIndex].usNegativeIndex % 8) ==
+						    cLVDSByteIndex) {
 							/***************************************************************
 							*
 							* Set negative bit to 0.
@@ -2700,8 +2634,7 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 							***************************************************************/
 
 							cDataByte |= 0x00;
-						}
-						else if ( cInDataByte & 0x80 ) {
+						} else if (cInDataByte & 0x80) {
 							cDataByte |= 0x01;
 						}
 
@@ -2714,32 +2647,32 @@ static signed char ispVMReadandSave( unsigned short int a_usiDataSize )
 					*
 					***************************************************************/
 
-					g_pucOutData[ g_pLVDSList[ usLVDSIndex ].usNegativeIndex / 8 ] = cDataByte;
+					g_pucOutData[g_pLVDSList[usLVDSIndex].usNegativeIndex / 8] = cDataByte;
 				}
-				
+
 				break;
 			}
 		}
 	}
 
-	return( 0 );
+	return (0);
 }
 
-static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount )
+static signed char ispVMProcessLVDS(unsigned short a_usLVDSCount)
 {
 	unsigned short usLVDSIndex = 0;
-	
+
 	/***************************************************************
 	*
 	* Allocate memory to hold LVDS pairs.
 	*
 	***************************************************************/
 
-	ispVMMemManager( LVDS, a_usLVDSCount );
+	ispVMMemManager(LVDS, a_usLVDSCount);
 	g_usLVDSPairCount = a_usLVDSCount;
 
 #ifdef VME_DEBUG
-	printf( "LVDS %d (", a_usLVDSCount );
+	printf("LVDS %d (", a_usLVDSCount);
 #endif //VME_DEBUG
 
 	/***************************************************************
@@ -2748,8 +2681,7 @@ static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount )
 	*
 	***************************************************************/
 
-	for ( usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++ ) {
-
+	for (usLVDSIndex = 0; usLVDSIndex < g_usLVDSPairCount; usLVDSIndex++) {
 		/***************************************************************
 		*
 		* Assign the positive and negative indices of the LVDS pair.
@@ -2757,26 +2689,26 @@ static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount )
 		***************************************************************/
 
 		//09/11/07 NN Type cast mismatch variables
-		g_pLVDSList[ usLVDSIndex ].usPositiveIndex = (unsigned short) ispVMDataSize();
+		g_pLVDSList[usLVDSIndex].usPositiveIndex = (unsigned short)ispVMDataSize();
 		//09/11/07 NN Type cast mismatch variables
-		g_pLVDSList[ usLVDSIndex ].usNegativeIndex = (unsigned short)ispVMDataSize();
+		g_pLVDSList[usLVDSIndex].usNegativeIndex = (unsigned short)ispVMDataSize();
 
 #ifdef VME_DEBUG
-		if ( usLVDSIndex < g_usLVDSPairCount - 1 ) {
-			printf( "%d:%d, ", g_pLVDSList[ usLVDSIndex ].usPositiveIndex, g_pLVDSList[ usLVDSIndex ].usNegativeIndex );
-		}
-		else {
-			printf( "%d:%d", g_pLVDSList[ usLVDSIndex ].usPositiveIndex, g_pLVDSList[ usLVDSIndex ].usNegativeIndex );
+		if (usLVDSIndex < g_usLVDSPairCount - 1) {
+			printf("%d:%d, ", g_pLVDSList[usLVDSIndex].usPositiveIndex,
+			       g_pLVDSList[usLVDSIndex].usNegativeIndex);
+		} else {
+			printf("%d:%d", g_pLVDSList[usLVDSIndex].usPositiveIndex,
+			       g_pLVDSList[usLVDSIndex].usNegativeIndex);
 		}
 #endif //VME_DEBUG
-
 	}
 
 #ifdef VME_DEBUG
-	printf( ");\n", a_usLVDSCount );
+	printf(");\n", a_usLVDSCount);
 #endif //VME_DEBUG
 
-	return( 0 );
+	return (0);
 }
 
 /**************************************************************
@@ -2798,7 +2730,6 @@ static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount )
 * requested from Lattice's ispVMSupport.
 *
 ***************************************************************/
-
 
 /**************************************************************
 * 
@@ -2824,7 +2755,7 @@ static signed char ispVMProcessLVDS( unsigned short a_usLVDSCount )
 *
 ***************************************************************/
 
-static FILE * g_pVMEFile = NULL;
+static FILE *g_pVMEFile = NULL;
 
 /***************************************************************
 *
@@ -2835,9 +2766,9 @@ static unsigned char GetByte(void);
 //static void vme_out_char(unsigned char charOut);
 //static void vme_out_hex(unsigned char hexOut);
 //static void vme_out_string(char *stringOut);
-static void ispVMMemManager( signed char cTarget, unsigned short usSize );
+static void ispVMMemManager(signed char cTarget, unsigned short usSize);
 static void ispVMFreeMem(void);
-signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename );
+signed char ispVM(struct ispvm_f *callbacks, const char *a_pszFilename);
 
 /***************************************************************
 *
@@ -2853,19 +2784,21 @@ static unsigned short g_usExpectedCRC = 0;
 *
 ***************************************************************/
 
-static const char * const g_szSupportedVersions[] = { "__VME2.0", "__VME3.0", "____12.0", "____12.1", 0 };
+static const char *const g_szSupportedVersions[] = { "__VME2.0", "__VME3.0", "____12.0", "____12.1", 0 };
 
 static unsigned char *memstore_buf;
 static int memstore_len;
 static int memstore_idx;
 
-static void memstore(FILE *f) {
+static void memstore(FILE *f)
+{
 	int sz = 0x10000;
 	int rem = sz;
 	int i;
 	unsigned char *b, *t;
 
-	if (memstore_buf) free(memstore_buf);
+	if (memstore_buf)
+		free(memstore_buf);
 	b = memstore_buf = malloc(sz);
 	assert(b != NULL);
 
@@ -2874,16 +2807,16 @@ static void memstore(FILE *f) {
 			sz += 0x10000;
 			rem = 0x10000;
 			t = realloc(memstore_buf, sz);
-			assert (t != NULL);
+			assert(t != NULL);
 			b = t + (b - memstore_buf);
 			memstore_buf = t;
 		}
-			
-		i = fread(b, 1, rem, f); 
+
+		i = fread(b, 1, rem, f);
 		rem -= i;
 		b += i;
 	}
-	
+
 	memstore_idx = 0;
 	memstore_len = sz - rem;
 	assert(memstore_len > 0);
@@ -2891,27 +2824,29 @@ static void memstore(FILE *f) {
 	assert(memstore_buf != NULL);
 }
 
-static FILE *xopen(const char *f) {
+static FILE *xopen(const char *f)
+{
 	int l = strlen(f);
 	char b[512];
 	struct stat s;
 
-	if (strcmp("-", f) == 0) return stdin;
+	if (strcmp("-", f) == 0)
+		return stdin;
 
-	if (stat(f, &s) != 0) return NULL;
+	if (stat(f, &s) != 0)
+		return NULL;
 
-	if (strcmp(".jed.gz", &f[l-7]) == 0 || 
-	  strcmp(".jed.bz2", &f[l-8]) == 0 ||
-	  strcmp(".jed", &f[l-4]) == 0) {
+	if (strcmp(".jed.gz", &f[l - 7]) == 0 || strcmp(".jed.bz2", &f[l - 8]) == 0 || strcmp(".jed", &f[l - 4]) == 0) {
 		snprintf(b, 512, "exec jed2vme '%s'", f);
 		return popen(b, "r");
-	} else if (strcmp(".vme.gz", &f[l-7]) == 0) {
+	} else if (strcmp(".vme.gz", &f[l - 7]) == 0) {
 		snprintf(b, 512, "exec gunzip -c '%s'", f);
 		return popen(b, "r");
-	} else if (strcmp(".vme.bz2", &f[l-8]) == 0) {
+	} else if (strcmp(".vme.bz2", &f[l - 8]) == 0) {
 		snprintf(b, 512, "exec bunzip2 -c '%s'", f);
 		return popen(b, "r");
-	} else return fopen(f, "r");
+	} else
+		return fopen(f, "r");
 }
 
 /***************************************************************
@@ -2929,17 +2864,15 @@ static FILE *xopen(const char *f) {
 static unsigned char GetByte()
 {
 	unsigned char ucData = 0;
-	
-	if ( g_usDataType & HEAP_IN ) {
 
+	if (g_usDataType & HEAP_IN) {
 		/***************************************************************
 		*
 		* Get data from repeat buffer.
 		*
 		***************************************************************/
 
-		if ( g_iHeapCounter > g_iHEAPSize ) {
-
+		if (g_iHeapCounter > g_iHEAPSize) {
 			/***************************************************************
 			*
 			* Data over-run.
@@ -2949,18 +2882,15 @@ static unsigned char GetByte()
 			return 0xFF;
 		}
 
-		ucData = g_pucHeapMemory[ g_iHeapCounter++ ];
-	}
-	else if ( g_usDataType & LHEAP_IN ) {
-
+		ucData = g_pucHeapMemory[g_iHeapCounter++];
+	} else if (g_usDataType & LHEAP_IN) {
 		/***************************************************************
 		*
 		* Get data from intel buffer.
 		*
 		***************************************************************/
 
-		if ( g_usIntelDataIndex >= g_usIntelBufferSize ) {
-
+		if (g_usIntelDataIndex >= g_usIntelBufferSize) {
 			/***************************************************************
 			*
 			* Data over-run.
@@ -2970,31 +2900,30 @@ static unsigned char GetByte()
 			return 0xFF;
 		}
 
-		ucData = g_pucIntelBuffer[ g_usIntelDataIndex++ ];
-	}
-	else {
-
+		ucData = g_pucIntelBuffer[g_usIntelDataIndex++];
+	} else {
 		/***************************************************************
 		*
 		* Get data from file.
 		*
 		***************************************************************/
 
-
-		if ( memstore_idx >= memstore_len ) {
+		if (memstore_idx >= memstore_len) {
 			/***************************************************************
 			*
 			* Reached EOF.
 			*
 			***************************************************************/
 
-			if (memstore_buf) free(memstore_buf);
+			if (memstore_buf)
+				free(memstore_buf);
 			memstore_buf = NULL;
 			return 0xFF;
-		} else ucData = memstore_buf[memstore_idx++];
+		} else
+			ucData = memstore_buf[memstore_idx++];
 	}
-	
-	return ( ucData );
+
+	return (ucData);
 }
 
 /***************************************************************
@@ -3049,114 +2978,110 @@ static unsigned char GetByte()
 *
 ***************************************************************/
 
-static void ispVMMemManager( signed char cTarget, unsigned short usSize )
+static void ispVMMemManager(signed char cTarget, unsigned short usSize)
 {
-	switch ( cTarget ) {
+	switch (cTarget) {
 	case XTDI:
-    case TDI:  
-		if ( g_pucInData != NULL ) {
-			if ( g_usPreviousSize == usSize ) {/*memory exist*/
+	case TDI:
+		if (g_pucInData != NULL) {
+			if (g_usPreviousSize == usSize) { /*memory exist*/
 				break;
-			}
-			else {
-				free( g_pucInData );
+			} else {
+				free(g_pucInData);
 				g_pucInData = NULL;
 			}
 		}
-		g_pucInData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucInData = (unsigned char *)malloc(usSize / 8 + 2);
 		g_usPreviousSize = usSize;
-    case XTDO:
-    case TDO:
-		if ( g_pucOutData!= NULL ) { 
-			if ( g_usPreviousSize == usSize ) { /*already exist*/
+	case XTDO:
+	case TDO:
+		if (g_pucOutData != NULL) {
+			if (g_usPreviousSize == usSize) { /*already exist*/
 				break;
-			}
-			else {
-				free( g_pucOutData );
+			} else {
+				free(g_pucOutData);
 				g_pucOutData = NULL;
 			}
 		}
-		g_pucOutData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucOutData = (unsigned char *)malloc(usSize / 8 + 2);
 		g_usPreviousSize = usSize;
 		break;
-    case MASK:
-		if ( g_pucOutMaskData != NULL ) {
-			if ( g_usPreviousSize == usSize ) {/*already allocated*/
+	case MASK:
+		if (g_pucOutMaskData != NULL) {
+			if (g_usPreviousSize == usSize) { /*already allocated*/
 				break;
-			}
-			else {
-				free( g_pucOutMaskData ); 
+			} else {
+				free(g_pucOutMaskData);
 				g_pucOutMaskData = NULL;
 			}
 		}
-		g_pucOutMaskData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucOutMaskData = (unsigned char *)malloc(usSize / 8 + 2);
 		g_usPreviousSize = usSize;
 		break;
-    case HIR:
-		if ( g_pucHIRData != NULL ) {
-			free( g_pucHIRData );
+	case HIR:
+		if (g_pucHIRData != NULL) {
+			free(g_pucHIRData);
 			g_pucHIRData = NULL;
 		}
-		g_pucHIRData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucHIRData = (unsigned char *)malloc(usSize / 8 + 2);
 		break;
-    case TIR:
-		if ( g_pucTIRData != NULL ) {
-			free( g_pucTIRData );
+	case TIR:
+		if (g_pucTIRData != NULL) {
+			free(g_pucTIRData);
 			g_pucTIRData = NULL;
 		}
-		g_pucTIRData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucTIRData = (unsigned char *)malloc(usSize / 8 + 2);
 		break;
-    case HDR:
-		if ( g_pucHDRData != NULL ) {
-			free( g_pucHDRData );
+	case HDR:
+		if (g_pucHDRData != NULL) {
+			free(g_pucHDRData);
 			g_pucHDRData = NULL;
 		}
-		g_pucHDRData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucHDRData = (unsigned char *)malloc(usSize / 8 + 2);
 		break;
-    case TDR:
-		if ( g_pucTDRData != NULL ) {
-			free( g_pucTDRData );
+	case TDR:
+		if (g_pucTDRData != NULL) {
+			free(g_pucTDRData);
 			g_pucTDRData = NULL;
 		}
-		g_pucTDRData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucTDRData = (unsigned char *)malloc(usSize / 8 + 2);
 		break;
-    case HEAP:
-		if ( g_pucHeapMemory != NULL ) {
-			free( g_pucHeapMemory );
+	case HEAP:
+		if (g_pucHeapMemory != NULL) {
+			free(g_pucHeapMemory);
 			g_pucHeapMemory = NULL;
 		}
-		g_pucHeapMemory = ( unsigned char * ) malloc( usSize + 2 );
+		g_pucHeapMemory = (unsigned char *)malloc(usSize + 2);
 		break;
-	case DMASK: 
-		if ( g_pucOutDMaskData != NULL ) {
-			if ( g_usPreviousSize == usSize ) { /*already allocated*/
+	case DMASK:
+		if (g_pucOutDMaskData != NULL) {
+			if (g_usPreviousSize == usSize) { /*already allocated*/
 				break;
-			}
-			else {
-				free( g_pucOutDMaskData ); 
+			} else {
+				free(g_pucOutDMaskData);
 				g_pucOutDMaskData = NULL;
 			}
 		}
-		g_pucOutDMaskData = ( unsigned char * ) malloc( usSize / 8 + 2 );
+		g_pucOutDMaskData = (unsigned char *)malloc(usSize / 8 + 2);
 		g_usPreviousSize = usSize;
 		break;
 	case LHEAP:
-		if ( g_pucIntelBuffer != NULL ) {
-			free( g_pucIntelBuffer );
+		if (g_pucIntelBuffer != NULL) {
+			free(g_pucIntelBuffer);
 			g_pucIntelBuffer = NULL;
 		}
-		g_pucIntelBuffer = ( unsigned char * ) malloc( usSize + 2 );
+		g_pucIntelBuffer = (unsigned char *)malloc(usSize + 2);
 		break;
 	case LVDS:
-		if ( g_pLVDSList != NULL ) {
-			free( g_pLVDSList );
+		if (g_pLVDSList != NULL) {
+			free(g_pLVDSList);
 			g_pLVDSList = NULL;
 		}
-		g_pLVDSList = ( LVDSPair * ) calloc( usSize, sizeof( LVDSPair ) );
+		g_pLVDSList = (LVDSPair *)calloc(usSize, sizeof(LVDSPair));
 		break;
 	default:
 		return;
-    }
+	}
 }
 
 /***************************************************************
@@ -3169,61 +3094,61 @@ static void ispVMMemManager( signed char cTarget, unsigned short usSize )
 
 static void ispVMFreeMem()
 {
-	if ( g_pucHeapMemory != NULL ) {
-		free( g_pucHeapMemory ); 
+	if (g_pucHeapMemory != NULL) {
+		free(g_pucHeapMemory);
 		g_pucHeapMemory = NULL;
 	}
 
-	if ( g_pucOutMaskData != NULL ) {
-		free( g_pucOutMaskData );
+	if (g_pucOutMaskData != NULL) {
+		free(g_pucOutMaskData);
 		g_pucOutMaskData = NULL;
 	}
-	
-	if ( g_pucInData != NULL ) {
-		free( g_pucInData );
+
+	if (g_pucInData != NULL) {
+		free(g_pucInData);
 		g_pucInData = NULL;
 	}
-	
-	if ( g_pucOutData != NULL ) {
-		free( g_pucOutData );
+
+	if (g_pucOutData != NULL) {
+		free(g_pucOutData);
 		g_pucOutData = NULL;
 	}
-	
-	if ( g_pucHIRData != NULL ) {
-		free( g_pucHIRData );
+
+	if (g_pucHIRData != NULL) {
+		free(g_pucHIRData);
 		g_pucHIRData = NULL;
 	}
-	
-	if ( g_pucTIRData != NULL ) {
-		free( g_pucTIRData );
+
+	if (g_pucTIRData != NULL) {
+		free(g_pucTIRData);
 		g_pucTIRData = NULL;
 	}
-	
-	if ( g_pucHDRData != NULL ) {
-		free( g_pucHDRData );
+
+	if (g_pucHDRData != NULL) {
+		free(g_pucHDRData);
 		g_pucHDRData = NULL;
 	}
-	
-	if ( g_pucTDRData != NULL ) {
-		free( g_pucTDRData );
+
+	if (g_pucTDRData != NULL) {
+		free(g_pucTDRData);
 		g_pucTDRData = NULL;
 	}
-	
-	if ( g_pucOutDMaskData != NULL ) {
-		free( g_pucOutDMaskData );
+
+	if (g_pucOutDMaskData != NULL) {
+		free(g_pucOutDMaskData);
 		g_pucOutDMaskData = NULL;
 	}
-	
-	if ( g_pucIntelBuffer != NULL ) {
-		free( g_pucIntelBuffer );
+
+	if (g_pucIntelBuffer != NULL) {
+		free(g_pucIntelBuffer);
 		g_pucIntelBuffer = NULL;
 	}
 
-	if ( g_pLVDSList != NULL ) {
-		free( g_pLVDSList );
+	if (g_pLVDSList != NULL) {
+		free(g_pLVDSList);
 		g_pLVDSList = NULL;
 	}
-} 
+}
 
 /***************************************************************
 *
@@ -3234,14 +3159,14 @@ static void ispVMFreeMem()
 *
 ***************************************************************/
 
-signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
+signed char ispVM(struct ispvm_f *callbacks, const char *a_pszFilename)
 {
-	char szFileVersion[ 9 ]      = { 0 };
-	signed char cRetCode         = 0;
-	signed char cIndex           = 0;
-	signed char cVersionIndex    = 0;
-	unsigned char ucReadByte     = 0;
-	
+	char szFileVersion[9] = { 0 };
+	signed char cRetCode = 0;
+	signed char cIndex = 0;
+	signed char cVersionIndex = 0;
+	unsigned char ucReadByte = 0;
+
 	hw = callbacks;
 
 	/***************************************************************
@@ -3250,12 +3175,12 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	* 09/11/07 NN Added
 	***************************************************************/
-	g_pucHeapMemory		= NULL;
-	g_iHeapCounter		= 0;
-	g_iHEAPSize			= 0;
-	g_usIntelDataIndex	= 0;
-	g_usIntelBufferSize	= 0;
-	g_usPreviousSize     = 0;
+	g_pucHeapMemory = NULL;
+	g_iHeapCounter = 0;
+	g_iHEAPSize = 0;
+	g_usIntelDataIndex = 0;
+	g_usIntelBufferSize = 0;
+	g_usPreviousSize = 0;
 
 	/***************************************************************
 	*
@@ -3263,18 +3188,19 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	***************************************************************/
 
-	if ( ( g_pVMEFile = xopen( a_pszFilename ) ) == NULL ) {
+	if ((g_pVMEFile = xopen(a_pszFilename)) == NULL) {
 		return VME_FILE_READ_FAILURE;
 	}
 	memstore(g_pVMEFile);
-    	if (pclose(g_pVMEFile) == -1) fclose(g_pVMEFile);
+	if (pclose(g_pVMEFile) == -1)
+		fclose(g_pVMEFile);
 	g_pVMEFile = NULL;
 	hardware_init();
 
 	g_usCalculatedCRC = 0;
-	g_usExpectedCRC   = 0;
+	g_usExpectedCRC = 0;
 	ucReadByte = GetByte();
-	switch( ucReadByte ) {
+	switch (ucReadByte) {
 	case FILE_CRC:
 
 		/***************************************************************
@@ -3284,10 +3210,9 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 		*
 		***************************************************************/
 
-		g_usExpectedCRC = (unsigned char ) memstore_buf[memstore_idx++];
+		g_usExpectedCRC = (unsigned char)memstore_buf[memstore_idx++];
 		g_usExpectedCRC <<= 8;
 		g_usExpectedCRC |= memstore_buf[memstore_idx++];
-		
 
 		/***************************************************************
 		*
@@ -3295,8 +3220,8 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 		*
 		***************************************************************/
 
-		for ( cIndex = 0; cIndex < 8; cIndex++ ) {
-			szFileVersion[ cIndex ] = GetByte();
+		for (cIndex = 0; cIndex < 8; cIndex++) {
+			szFileVersion[cIndex] = GetByte();
 		}
 
 		break;
@@ -3308,9 +3233,9 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 		*
 		***************************************************************/
 
-		szFileVersion[ 0 ] = ( signed char ) ucReadByte;
-		for ( cIndex = 1; cIndex < 8; cIndex++ ) {
-			szFileVersion[ cIndex ] = GetByte();
+		szFileVersion[0] = (signed char)ucReadByte;
+		for (cIndex = 1; cIndex < 8; cIndex++) {
+			szFileVersion[cIndex] = GetByte();
 		}
 
 		break;
@@ -3322,17 +3247,16 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	***************************************************************/
 
-	for ( cVersionIndex = 0; g_szSupportedVersions[ cVersionIndex ] != 0; cVersionIndex++ ) {
-		for ( cIndex = 0; cIndex < 8; cIndex++ ) {
-			if ( szFileVersion[ cIndex ] != g_szSupportedVersions[ cVersionIndex ][ cIndex ] ) {
+	for (cVersionIndex = 0; g_szSupportedVersions[cVersionIndex] != 0; cVersionIndex++) {
+		for (cIndex = 0; cIndex < 8; cIndex++) {
+			if (szFileVersion[cIndex] != g_szSupportedVersions[cVersionIndex][cIndex]) {
 				cRetCode = VME_VERSION_FAILURE;
 				break;
-			}	
+			}
 			cRetCode = 0;
 		}
 
-		if ( cRetCode == 0 ) {
-
+		if (cRetCode == 0) {
 			/***************************************************************
 			*
 			* Found matching version, break.
@@ -3343,8 +3267,7 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 		}
 	}
 
-	if ( cRetCode < 0 ) {
-
+	if (cRetCode < 0) {
 		/***************************************************************
 		*
 		* VME file version failed to match the supported versions.
@@ -3361,7 +3284,7 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	***************************************************************/
 
-    ispVMStart();
+	ispVMStart();
 
 	/***************************************************************
 	*
@@ -3369,7 +3292,7 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	***************************************************************/
 
-    cRetCode = ispVMCode();
+	cRetCode = ispVMCode();
 
 	/***************************************************************
 	*
@@ -3378,41 +3301,51 @@ signed char ispVM( struct ispvm_f *callbacks, const char * a_pszFilename )
 	*
 	***************************************************************/
 
-    ispVMEnd();
-    hardware_restore();
+	ispVMEnd();
+	hardware_restore();
 	ispVMFreeMem();
 
-	
-    return ( cRetCode );
+	return (cRetCode);
 }
 
-static void hardware_init(void) {
+static void hardware_init(void)
+{
 	hw->init();
 }
 
-static void hardware_restore(void) {
+static void hardware_restore(void)
+{
 	hw->restore();
 }
 
-static inline void writePort(int pins, int val) {
+static inline void writePort(int pins, int val)
+{
 	hw->writeport(pins, val);
 }
 
-static inline int readPort() {
+static inline int readPort()
+{
 	return hw->readport();
-} 
+}
 
-static inline void sclock() {	
+static inline void sclock()
+{
 	hw->sclock();
 }
 
-static inline void udelay(unsigned int us) {
-	if(hw->udelay) hw->udelay(us);
-	else usleep(us);
+static inline void udelay(unsigned int us)
+{
+	if (hw->udelay)
+		hw->udelay(us);
+	else
+		usleep(us);
 }
 
 /* MSB of arg determines whether units in uS or mS */
-static void ispVMDelay(unsigned short delay) {
-	if (delay & 0x8000) udelay((delay & ~0x8000) * 1000);
-	else udelay(delay & ~0x8000);
+static void ispVMDelay(unsigned short delay)
+{
+	if (delay & 0x8000)
+		udelay((delay & ~0x8000) * 1000);
+	else
+		udelay(delay & ~0x8000);
 }

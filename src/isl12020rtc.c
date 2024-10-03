@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <dirent.h> 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,12 +12,11 @@
 
 #include "i2c-dev.h"
 
-#define ISL12022_REG_OFF_VAL	0x21
-#define ISL12022_REG_OFF_CTL	0x25
-#define ISL12022_OFF_CTL_APPLY	(1 << 0) /* Make value take affect now */
-#define ISL12022_OFF_CTL_ADD	(1 << 1) /* 1 if the value is add, 0 if subtract */
-#define ISL12022_OFF_CTL_FLASH	(1 << 2) /* 1 to commit to flash, 0 to just ram */
-
+#define ISL12022_REG_OFF_VAL 0x21
+#define ISL12022_REG_OFF_CTL 0x25
+#define ISL12022_OFF_CTL_APPLY (1 << 0) /* Make value take affect now */
+#define ISL12022_OFF_CTL_ADD (1 << 1) /* 1 if the value is add, 0 if subtract */
+#define ISL12022_OFF_CTL_FLASH (1 << 2) /* 1 to commit to flash, 0 to just ram */
 
 int rtc_init()
 {
@@ -25,25 +24,26 @@ int rtc_init()
 	DIR *d;
 	struct dirent *dir;
 
-	if(fd != -1)
+	if (fd != -1)
 		return fd;
 
 	// Depending on which baseboard the TS-4900 is used on there
-	// May be a different number of /dev/i2c-* devices.  This will 
-	// search for the name 21a0000.i2c where the name is the 
+	// May be a different number of /dev/i2c-* devices.  This will
+	// search for the name 21a0000.i2c where the name is the
 	// memory address in the imx6 of the correct i2c bus.
 	d = opendir("/sys/bus/i2c/devices/");
-	if (d){
+	if (d) {
 		while ((dir = readdir(d)) != NULL) {
-			char path[128], busname[128];
+			char path[512], busname[512];
 			int namefd;
-			snprintf(path, 100, "/sys/bus/i2c/devices/%s/name", dir->d_name);
+			snprintf(path, 512, "/sys/bus/i2c/devices/%s/name", dir->d_name);
 			namefd = open(path, O_RDONLY);
-			if(namefd == -1) continue;
-			if(read(namefd, busname, 128) == -1) perror("busname");
-			if(strncmp(busname, "21a0000.i2c", 11) == 0)
-			{
-				snprintf(path, 100, "/dev/%s", dir->d_name);
+			if (namefd == -1)
+				continue;
+			if (read(namefd, busname, 512) == -1)
+				perror("busname");
+			if (strncmp(busname, "21a0000.i2c", 11) == 0) {
+				snprintf(path, 512, "/dev/%s", dir->d_name);
 				fd = open(path, O_RDWR);
 			}
 		}
@@ -60,27 +60,27 @@ int rtc_init()
 	return fd;
 }
 
-void rtc_read(int twifd, uint8_t addr, void *data, uint8_t len)
+void rtc_read(int i2cfd, uint8_t addr, void *data, uint8_t len)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msgs[2];
 	int retry = 0;
 
 retry:
-	msgs[0].addr    = 0x6f;
-	msgs[0].flags   = 0;
-	msgs[0].len	= 1;
-	msgs[0].buf	= (char *)&addr;
+	msgs[0].addr = 0x6f;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = (char *)&addr;
 
-	msgs[1].addr    = 0x6f;
-	msgs[1].flags   = I2C_M_RD;
-	msgs[1].len	= len;
-	msgs[1].buf	= (char *)data;
+	msgs[1].addr = 0x6f;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = len;
+	msgs[1].buf = (char *)data;
 
-	packets.msgs  = msgs;
+	packets.msgs = msgs;
 	packets.nmsgs = 2;
 
-	if (ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to read data");
 		retry++;
 		if (retry < 10)
@@ -88,7 +88,7 @@ retry:
 	}
 }
 
-void rtc_write(int twifd, uint8_t addr, uint8_t data)
+void rtc_write(int i2cfd, uint8_t addr, uint8_t data)
 {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg msg;
@@ -99,15 +99,15 @@ void rtc_write(int twifd, uint8_t addr, uint8_t data)
 	tmp[1] = data;
 
 retry:
-	msg.addr	= 0x6f;
-	msg.flags	= 0;
-	msg.len		= 2;
-	msg.buf		= (char *)tmp;
+	msg.addr = 0x6f;
+	msg.flags = 0;
+	msg.len = 2;
+	msg.buf = (char *)tmp;
 
-	packets.msgs  = &msg;
+	packets.msgs = &msg;
 	packets.nmsgs = 1;
 
-	if (ioctl(twifd, I2C_RDWR, &packets) < 0) {
+	if (ioctl(i2cfd, I2C_RDWR, &packets) < 0) {
 		perror("Unable to write data");
 		retry++;
 		if (retry < 10)
@@ -116,13 +116,13 @@ retry:
 }
 
 /* Return temp n millicelcius */
-int rtc_temp_read(int twifd)
+int rtc_temp_read(int i2cfd)
 {
 	uint8_t data[2];
-	rtc_read(twifd, 0x28, data, 2);
+	rtc_read(i2cfd, 0x28, data, 2);
 
 	/* Convert from Kelvin */
-	return ((data[0]|(data[1]<<8))*500)-273000;
+	return ((data[0] | (data[1] << 8)) * 500) - 273000;
 }
 
 int bcd_to_decimal(uint8_t bcd)
@@ -132,15 +132,15 @@ int bcd_to_decimal(uint8_t bcd)
 	return dec;
 }
 
-void rtc_tsv2b_read(int twifd, struct tm *ts)
+void rtc_tsv2b_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
 	int year;
 
-	rtc_read(twifd, 0x16, data, 5);
+	rtc_read(i2cfd, 0x16, data, 5);
 	time(&now);
-  	gmtime_r(&now, ts);
+	gmtime_r(&now, ts);
 
 	ts->tm_sec = bcd_to_decimal(data[0] & 0x7f);
 	ts->tm_min = bcd_to_decimal(data[1] & 0x7f);
@@ -150,15 +150,15 @@ void rtc_tsv2b_read(int twifd, struct tm *ts)
 	/* Year will always match current year! */
 }
 
-void rtc_tsb2v_read(int twifd, struct tm *ts)
+void rtc_tsb2v_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
 	int year;
 
-	rtc_read(twifd, 0x1b, data, 5);
+	rtc_read(i2cfd, 0x1b, data, 5);
 	time(&now);
-  	gmtime_r(&now, ts);
+	gmtime_r(&now, ts);
 
 	ts->tm_sec = bcd_to_decimal(data[0] & 0x7f);
 	ts->tm_min = bcd_to_decimal(data[1] & 0x7f);
@@ -168,51 +168,49 @@ void rtc_tsb2v_read(int twifd, struct tm *ts)
 	/* Year will always match current year! */
 }
 
-void rtc_clear_time_stamp(int twifd)
+void rtc_clear_time_stamp(int i2cfd)
 {
 	uint8_t data;
 
-	rtc_read(twifd, 0x09, &data, 1);
+	rtc_read(i2cfd, 0x09, &data, 1);
 	data |= (1 << 7); /* CLRTS */
-	rtc_write(twifd, 0x09, data);
+	rtc_write(i2cfd, 0x09, data);
 }
 
-int rtc_is_emulated(int twifd)
+int rtc_is_emulated(int i2cfd)
 {
 	uint8_t data;
 
-	rtc_read(twifd, 0x0f, &data, 1);
+	rtc_read(i2cfd, 0x0f, &data, 1);
 	return !!(data & (1 << 7));
 }
 
-void rtc_offset_set(int twifd, long offset)
+void rtc_offset_set(int i2cfd, long offset)
 {
 	uint8_t data;
 	uint32_t ppb = labs(offset);
 
 	data = (uint8_t)(ppb >> 0);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 0, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 0, data);
 	data = (uint8_t)(ppb >> 8);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 1, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 1, data);
 	data = (uint8_t)(ppb >> 16);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 2, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 2, data);
 	data = (uint8_t)(ppb >> 24);
-	rtc_write(twifd, ISL12022_REG_OFF_VAL + 3, data);
+	rtc_write(i2cfd, ISL12022_REG_OFF_VAL + 3, data);
 
-	data = ISL12022_OFF_CTL_APPLY |
-	       ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) |
-	       ISL12022_OFF_CTL_FLASH;
-	rtc_write(twifd, ISL12022_REG_OFF_CTL, data);
+	data = ISL12022_OFF_CTL_APPLY | ((offset > 0) ? ISL12022_OFF_CTL_ADD : 0) | ISL12022_OFF_CTL_FLASH;
+	rtc_write(i2cfd, ISL12022_REG_OFF_CTL, data);
 }
 
-long rtc_offset_get(int twifd)
+long rtc_offset_get(int i2cfd)
 {
 	uint8_t data;
 	uint32_t ppb;
 	long offset;
 
-	rtc_read(twifd, ISL12022_REG_OFF_VAL, &ppb, (sizeof(ppb)));
-	rtc_read(twifd, ISL12022_REG_OFF_CTL, &data, 1);
+	rtc_read(i2cfd, ISL12022_REG_OFF_VAL, &ppb, (sizeof(ppb)));
+	rtc_read(i2cfd, ISL12022_REG_OFF_CTL, &data, 1);
 
 	offset = ppb;
 
@@ -224,13 +222,13 @@ long rtc_offset_get(int twifd)
 
 int main(int argc, char **argv)
 {
-	int twifd;
+	int i2cfd;
 	int temp;
 	struct tm tsv2b, tsb2v;
 	char tmbuf[64];
 
-	twifd = rtc_init();
-	if (twifd == -1)
+	i2cfd = rtc_init();
+	if (i2cfd == -1)
 		return 1;
 
 	/* Set PPM value if specified */
@@ -238,25 +236,25 @@ int main(int argc, char **argv)
 		float ppm = atof(argv[1]);
 		long ppb = (long)(ppm * 1000 * -1);
 
-		rtc_offset_set(twifd, ppb);
+		rtc_offset_set(i2cfd, ppb);
 	}
 
-	temp = rtc_temp_read(twifd);
+	temp = rtc_temp_read(i2cfd);
 	printf("rtctemp_millicelcius=%d\n", temp);
 
-	rtc_tsv2b_read(twifd, &tsv2b);
+	rtc_tsv2b_read(i2cfd, &tsv2b);
 	strftime(tmbuf, 64, "%m-%d %H:%M:%S", &tsv2b);
 	printf("poweroff_utc_timestamp_tsv2b=\"%s\"\n", tmbuf);
 
-	rtc_tsb2v_read(twifd, &tsb2v);
+	rtc_tsb2v_read(i2cfd, &tsb2v);
 	strftime(tmbuf, 64, "%m-%d %H:%M:%S", &tsb2v);
 	printf("poweron_utc_timestamp_tsb2v=\"%s\"\n", tmbuf);
 
-	printf("rtc_is_emulated=%d\n", rtc_is_emulated(twifd));
-	printf("offset_ppb=%ld\n", rtc_offset_get(twifd));
+	printf("rtc_is_emulated=%d\n", rtc_is_emulated(i2cfd));
+	printf("offset_ppb=%ld\n", rtc_offset_get(i2cfd));
 
-	rtc_clear_time_stamp(twifd);
+	rtc_clear_time_stamp(i2cfd);
 
-	close(twifd);
+	close(i2cfd);
 	return 0;
 }
