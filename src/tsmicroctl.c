@@ -18,7 +18,7 @@
 int model = 0;
 int i2cdevaddr;
 
-int get_model()
+static int get_model()
 {
 	int fd;
 	char mdl[256] = { 0 }; // Ensure the buffer is zero-initialized
@@ -80,10 +80,9 @@ static uint16_t inline cscale(uint16_t data, uint16_t shunt)
 	return (uint16_t)ret;
 }
 
-void do_sleep(int i2cfd, int seconds)
+static int do_sleep(int i2cfd, int seconds)
 {
 	unsigned char dat[4] = { 0 };
-	int opt_sleepmode = 1; // Legacy mode on new boards
 	int opt_resetswitchwkup = 1;
 	struct i2c_rdwr_ioctl_data ioctl_data;
 	struct i2c_msg msgs[1];
@@ -100,6 +99,7 @@ void do_sleep(int i2cfd, int seconds)
 		ioctl_data.nmsgs = 1;
 		if (ioctl(i2cfd, I2C_RDWR, &ioctl_data) < 0) {
 			perror("I2C_RDWR ioctl transaction failed");
+			return -1;
 		}
 
 		dat[0] = 52;
@@ -108,34 +108,37 @@ void do_sleep(int i2cfd, int seconds)
 		msgs[0].buf = (uint8_t *)dat;
 		if (ioctl(i2cfd, I2C_RDWR, &ioctl_data) < 0) {
 			perror("I2C_RDWR ioctl transaction failed");
+			return -1;
 		}
 	}
 
 	// Sleep command
-	dat[0] = (0x1 | (opt_resetswitchwkup << 1) | ((opt_sleepmode - 1) << 4) | (1 << 6));
+	dat[0] = (0x1 | (opt_resetswitchwkup << 1) | (1 << 6));
 	dat[3] = (seconds & 0xff);
 	dat[2] = ((seconds >> 8) & 0xff);
 	dat[1] = ((seconds >> 16) & 0xff);
 
 	if (v0_stream_write(i2cfd, i2cdevaddr, (uint8_t *)dat, 4) < 0) {
 		fprintf(stderr, "Unable to issue sleep command\n");
+		return -1;
 	}
 
+	return 0;
 }
 
-uint16_t swap_byte_order(uint16_t value)
+static uint16_t swap_byte_order(uint16_t value)
 {
 	return (value >> 8) | (value << 8);
 }
 
-void do_ts7990_info(int i2cfd)
+static int do_ts7990_info(int i2cfd)
 {
 	uint16_t data[16];
 	int i;
 
 	if (v0_stream_read(i2cfd, i2cdevaddr, (uint8_t *)data, 32) < 0) {
-		printf("I2C Read failed\n");
-		return;
+		fprintf(stderr, "I2C Read failed\n");
+		return -1;
 	}
 	for (i = 0; i <= 10; i++)
 		data[i] = swap_byte_order(data[i]);
@@ -152,9 +155,11 @@ void do_ts7990_info(int i2cfd)
 	printf("VDD_ARM_CAP=%d\n", sscale(data[8]));
 	printf("VDD_SOC_CAP=%d\n", sscale(data[9]));
 	printf("MICROREV=%d\n", data[15] >> 8);
+
+	return 0;
 }
 
-void do_ts7970_info(int i2cfd)
+static int do_ts7970_info(int i2cfd)
 {
 	uint16_t data[19];
 	int i;
@@ -175,8 +180,8 @@ void do_ts7970_info(int i2cfd)
 	 * considered a failure.
 	 */
 	if (v0_stream_read(i2cfd, i2cdevaddr, (uint8_t *)data, 32) < 0) {
-		printf("I2C Read failed\n");
-		return;
+		fprintf(stderr, "I2C Read failed\n");
+		return -1;
 	}
 
 	for (i = 0; i <= 16; i++)
@@ -204,13 +209,17 @@ void do_ts7970_info(int i2cfd)
 	printf("P12_UA=%d\n", cscale(data[6], 110));
 	if (data[15] >= 6) {
 		if (v0_stream_read(i2cfd, i2cdevaddr, (uint8_t *)data, 38) < 0) {
-			printf("MAC read failed\n");
-			return;
+			fprintf(stderr, "MAC read failed\n");
+			return -1;
 		}
-		uint8_t *mac_bytes = (uint8_t *)&data[16]; // Pointer to MAC bytes in data array
-		printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n", mac_bytes[0], mac_bytes[1], mac_bytes[3],
-		       mac_bytes[2], mac_bytes[5], mac_bytes[4]);
+		// MAC is stored starting at offset 16
+		uint8_t *mac_bytes = (uint8_t *)&data[16];
+		printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
+			mac_bytes[0], mac_bytes[1], mac_bytes[3],
+			mac_bytes[2], mac_bytes[5], mac_bytes[4]);
 	}
+
+	return 0;
 }
 
 static unsigned char const crc8x_table[] = {
@@ -231,7 +240,7 @@ static unsigned char const crc8x_table[] = {
 	0xFA, 0xFD, 0xF4, 0xF3
 };
 
-uint8_t crc8(uint8_t *input_str, size_t num_bytes)
+static uint8_t crc8(uint8_t *input_str, size_t num_bytes)
 {
 	size_t a;
 	uint8_t crc = 0;
@@ -246,7 +255,7 @@ uint8_t crc8(uint8_t *input_str, size_t num_bytes)
 	return crc;
 }
 
-void do_mac(int i2cfd, char *mac_opt)
+static int do_mac(int i2cfd, char *mac_opt)
 {
 	int r;
 	uint16_t rev;
@@ -258,35 +267,41 @@ void do_mac(int i2cfd, char *mac_opt)
 	 */
 	if (v0_stream_read(i2cfd, i2cdevaddr, buf, 32) < 0) {
 		fprintf(stderr, "Short read of I2C\n");
-		return;
+		return -1;
 	}
 
 	rev = (buf[30] << 8) | buf[31];
-	if (rev < 6) {
-		printf("MAC address cannot be set on this microcontroller!\n");
-		return;
+	if (rev < 6 || model != 0x7970) {
+		fprintf(stderr, "MAC cannot be set on this microcontroller!\n");
+		return -1;
 	}
 
 	/* Set the MAC address */
 	if (mac_opt != NULL) {
-		r = sscanf(mac_opt, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4],
-			   &mac[5]);
+		r = sscanf(mac_opt, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				    &mac[0], &mac[1], &mac[2], &mac[3], &mac[4],
+				    &mac[5]);
 		if (r != 6) {
-			printf("MAC address incorrectly formatted\n");
-			return;
+			fprintf(stderr, "MAC address incorrectly formatted\n");
+			return -1;
 		}
 		mac[6] = crc8(mac, 6);
 
 		if (v0_stream_write(i2cfd, i2cdevaddr, mac, 7) < 0) {
-			perror("Failed writing mac over i2c");
-			return;
+			fprintf(stderr, "Failed writing mac over i2c");
+			return -1;
 		}
 	}
+
 	if (v0_stream_read(i2cfd, i2cdevaddr, buf, 38) < 0) {
-		printf("Short read of I2C!\n");
-		return;
+		fprintf(stderr, "Short read of I2C!\n");
+		return -1;
 	}
-	printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n", buf[33], buf[32], buf[35], buf[34], buf[37], buf[36]);
+
+	printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
+		buf[33], buf[32], buf[35], buf[34], buf[37], buf[36]);
+
+	return 0;
 }
 
 static void usage(char **argv)
@@ -306,7 +321,6 @@ int main(int argc, char **argv)
 {
 	int c;
 	int i2cfd;
-	int ret = 0;
 	char *macptr = NULL;
 	int print_info = 0;
 	int enter_sleep = 0;
@@ -320,7 +334,7 @@ int main(int argc, char **argv)
 
 	if (argc == 1) {
 		usage(argv);
-		return (1);
+		return 1;
 	}
 
 	model = get_model();
@@ -345,40 +359,41 @@ int main(int argc, char **argv)
 		case 's':
 			enter_sleep = atoi(optarg);
 			if (enter_sleep < 1) {
-				ret = 1;
 				fprintf(stderr, "Invalid sleep time: %d\n",
 					enter_sleep);
-				goto out;
+				return 1;
 			}
 			break;
 		case 'm':
 			set_mac = 1;
-			macptr = strdup(optarg);
+			macptr = optarg;
 			break;
-		default:
-			ret = 1;
 		case 'h':
 			usage(argv);
-			goto out;
+			return 0;
+		default:
+			usage(argv);
+			return 1;
 		}
 	}
 
 	if (enter_sleep)
-		do_sleep(i2cfd, enter_sleep);
+		if (do_sleep(i2cfd, enter_sleep) < 0)
+			return 1;
 
 	if (set_mac)
-		do_mac(i2cfd, macptr);
+		if (do_mac(i2cfd, macptr) < 0)
+			return 1;
 
 	if (print_info) {
-		if (model == 0x7970)
-			do_ts7970_info(i2cfd);
-		else if (model == 0x7990)
-			do_ts7990_info(i2cfd);
+		if (model == 0x7970) {
+			if (do_ts7970_info(i2cfd) < 0)
+				return 1;
+		} else if (model == 0x7990) {
+			if (do_ts7990_info(i2cfd) < 0)
+				return 1;
+		}
 	}
 
-out:
-	if (macptr)
-		free(macptr);
-
-	return ret;
+	return 0;
 }
