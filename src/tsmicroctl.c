@@ -188,9 +188,24 @@ void do_ts7970_info(int i2cfd)
 	uint16_t data[19];
 	int i, ret;
 
-	ret = read(i2cfd, data, 19 * 2);
+	/* Rev 6 marks the change from Silicon Labs parts to Renesas for the
+	 * microcontroller. This change adds support for MAC address in the uC
+	 * which adds extra bytes to what are read.
+	 *
+	 * To correctly handle the differences, we need to read an amount of
+	 * data that matches the lowest common denominator, 32 bytes on uC rev
+	 * <= 5.
+	 *
+	 * Later, if we check and find that the rev is >= 6, then we can re-read
+	 * the data to get the full 38 bytes which includes the MAC address on the
+	 * newer microcontroller revisions.
+	 * To correctly handle errors, we need to have read 38 bytes if rev is
+	 * >= 6, and 32 bytes for rev <= 5. Anything other than that should be
+	 * considered a failure.
+	 */
+	ret = read(i2cfd, data, 16 * 2);
 
-	if (ret != 38) {
+	if (ret != 32) {
 		printf("I2C Read failed with %d\n", ret);
 		return;
 	}
@@ -218,6 +233,11 @@ void do_ts7970_info(int i2cfd)
 	printf("P11_UA=%d\n", cscale(data[5], 110));
 	printf("P12_UA=%d\n", cscale(data[6], 110));
 	if (data[15] >= 6) {
+		ret = read(i2cfd, data, 19 * 2);
+		if (ret != 38) {
+			printf("MAC read failed with %d\n", ret);
+			return;
+		}
 		uint8_t *mac_bytes = (uint8_t *)&data[16]; // Pointer to MAC bytes in data array
 		printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n", mac_bytes[0], mac_bytes[1], mac_bytes[3],
 		       mac_bytes[2], mac_bytes[5], mac_bytes[4]);
@@ -273,8 +293,10 @@ void do_mac(int i2cfd, char *mac_opt)
 		return;
 	}
 	rev = (buf[30] << 8) | buf[31];
-	if (rev < 6)
+	if (rev < 6) {
+		printf("MAC address cannot be set on this microcontroller!\n");
 		return;
+	}
 
 	/* Set the MAC address */
 	if (mac_opt != NULL) {
