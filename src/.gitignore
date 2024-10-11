@@ -1,5 +1,6 @@
 adc8390
 gpioctl
+isl12020rtc
 load_fpga
 nvramctl
 rtctemp
