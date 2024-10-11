@@ -82,33 +82,33 @@ static uint16_t inline cscale(uint16_t data, uint16_t shunt)
 
 static int do_sleep(int i2cfd, int seconds)
 {
-	unsigned char dat[4] = { 0 };
+	uint8_t dat[4];
 	int opt_resetswitchwkup = 1;
-	struct i2c_rdwr_ioctl_data ioctl_data;
-	struct i2c_msg msgs[1];
 
+	/* On the 7990 enable irq on touch controller, but only on
+	 * build variants using the capacitive touch controller. The
+	 * resistive touch screen does not need any pokes to enable
+	 * wake on touch.
+	 *
+	 * There isn't a good way to query the capactive touchscreen controller's
+	 * presence without either copying code or having an error message pop
+	 * up when using v0_stream_read() to check for presensce.
+	 */
 	if (model == 0x7990) {
-		/* On the 7990 enable irq on touch controller */
-		dat[0] = 51;
-		dat[1] = 0x1;
-		msgs[0].addr = 0x5c;
-		msgs[0].flags = 0;
-		msgs[0].len = 2;
-		msgs[0].buf = (uint8_t *)dat;
-		ioctl_data.msgs = msgs;
-		ioctl_data.nmsgs = 1;
-		if (ioctl(i2cfd, I2C_RDWR, &ioctl_data) < 0) {
-			perror("I2C_RDWR ioctl transaction failed");
-			return -1;
-		}
+		if (v0_stream_read(i2cfd, 0x5c, dat, 1) == 0) {
+			/* Set power mode to idle */
+			dat[0] = 51;
+			dat[1] = 0x1;
+			if (v0_stream_write(i2cfd, 0x5c, dat, 2) < 0)
+				return -1;
 
-		dat[0] = 52;
-		dat[1] = 0xa;
-		msgs[0].len = 2;
-		msgs[0].buf = (uint8_t *)dat;
-		if (ioctl(i2cfd, I2C_RDWR, &ioctl_data) < 0) {
-			perror("I2C_RDWR ioctl transaction failed");
-			return -1;
+			/* Enable interrupt output on touch */
+			dat[0] = 52;
+			dat[1] = 0xa;
+			if (v0_stream_write(i2cfd, 0x5c, dat, 2) < 0)
+				return -1;
+		} else {
+			fprintf(stderr, "Above errors should be ignored\n");
 		}
 	}
 
