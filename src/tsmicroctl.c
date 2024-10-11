@@ -215,7 +215,7 @@ static int do_ts7970_info(int i2cfd)
 		// MAC is stored starting at offset 16
 		uint8_t *mac_bytes = (uint8_t *)&data[16];
 		printf("MAC=\"%02x:%02x:%02x:%02x:%02x:%02x\"\n",
-			mac_bytes[0], mac_bytes[1], mac_bytes[3],
+			mac_bytes[1], mac_bytes[0], mac_bytes[3],
 			mac_bytes[2], mac_bytes[5], mac_bytes[4]);
 	}
 
