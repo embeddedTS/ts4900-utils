@@ -136,7 +136,6 @@ void rtc_tsv2b_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
-	int year;
 
 	rtc_read(i2cfd, 0x16, data, 5);
 	time(&now);
@@ -154,7 +153,6 @@ void rtc_tsb2v_read(int i2cfd, struct tm *ts)
 {
 	time_t now;
 	uint8_t data[5];
-	int year;
 
 	rtc_read(i2cfd, 0x1b, data, 5);
 	time(&now);
