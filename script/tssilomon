@@ -1,15 +1,15 @@
 #!/bin/sh
 
-if ! grep -qw "ts-silo=1" /proc/cmdline 2>&1; then
-	# Supercaps are not present or turned off
-	exit 1
-fi
-
 MODEL=$(strings /proc/device-tree/model | tr ' ' '\n' | grep TS-)
 
 if [ "$MODEL" != "TS-7990" ]; then
 	echo "Supercaps not supported on $MODEL"
 	exit 0
+fi
+
+if ! grep -qw "ts-silo=1" /proc/cmdline 2>&1; then
+	# Supercaps are not present or turned off
+	exit 1
 fi
 
 # This is extremely conservative, but allows running off
