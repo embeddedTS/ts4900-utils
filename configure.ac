@@ -11,9 +11,9 @@ AM_INIT_AUTOMAKE([1.00 foreign no-define])
 # Checks for programs.
 AC_PROG_CC
 
-PKG_CHECK_MODULES([LIBGPIOD], [libgpiod >= 1.4], [], [
+PKG_CHECK_MODULES([LIBGPIOD], [libgpiod >= 1.4], [],
   AC_MSG_ERROR([libgpiod is required but was not found])
-])
+)
 
 # Checks for libraries.
 AC_CHECK_LIB([m], [main])
