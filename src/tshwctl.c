@@ -20,6 +20,7 @@
 #include "crossbar-ts4900.h"
 #include "crossbar-ts7970.h"
 #include "crossbar-ts7990.h"
+#include "gpiod-helper.h"
 
 static int i2cfd;
 
@@ -182,14 +183,15 @@ void auto485_en(int uart, int baud, char *mode)
 
 int do_ts7990_info(int i2cfd)
 {
-	struct gpiod_chip *cpu_chip1 = 0, *cpu_chip2 = 0, *cpu_chip4 = 0;
-	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_e_line = 0;
+	struct gpiod_line_request *rev_b_line = NULL,
+				  *rev_d_line = NULL,
+				  *rev_e_line = NULL;
 	uint8_t h12, g12, p13, l14;
 	uint8_t boardopt;
 	uint8_t fpgarev;
 	char pcbrev;
 	uint8_t val;
-	int value;
+	enum gpiod_line_value value;
 	int ret = 0;
 
 	val = fpeek8(i2cfd, 51);
@@ -204,52 +206,35 @@ int do_ts7990_info(int i2cfd)
 	printf("okaya_present=%d\n", !!(val & 0x8));
 	printf("lxd_present=%d\n", !!(val & 0x10));
 
-	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
-	if (!cpu_chip1) {
-		perror("chip1: gpiod_chip_open");
+	rev_b_line = request_input_line("/dev/gpiochip2", 2, "tshwctl");
+	if (!rev_b_line) {
+		perror("Unable to open rev_b_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip2 = gpiod_chip_open("/dev/gpiochip2");
-	if (!cpu_chip2) {
-		perror("chip2: gpiod_chip_open");
+	rev_d_line = request_input_line("/dev/gpiochip4", 30, "tshwctl");
+	if (!rev_d_line) {
+		perror("Unable to open rev_d_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip4 = gpiod_chip_open("/dev/gpiochip4");
-	if (!cpu_chip4) {
-		perror("chip4: gpiod_chip_open");
+	rev_e_line = request_input_line("/dev/gpiochip1", 3, "tshwctl");
+	if (!rev_e_line) {
+		perror("Unable to open rev_e_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	rev_b_line = gpiod_chip_get_line(cpu_chip2, 2);
-	rev_d_line = gpiod_chip_get_line(cpu_chip4, 30);
-	rev_e_line = gpiod_chip_get_line(cpu_chip1, 3);
-	if (!rev_b_line || !rev_d_line || !rev_e_line) {
-		perror("gpiod_chip_get_line");
+	value = gpiod_line_request_get_value(rev_b_line, 2);
+	if (value == GPIOD_LINE_VALUE_ERROR) {
+		perror("rev_b_line read error");
 		ret = 1;
 		goto cleanup;
 	}
 
-	if (gpiod_line_request_input(rev_b_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_e_line, "tshwctl") < 0) {
-		perror("gpiod_line_request_input");
-		ret = 1;
-		goto cleanup;
-	}
-
-	value = gpiod_line_get_value(rev_b_line);
-	if (value < 0) {
-		perror("gpiod_line_get_value");
-		ret = 1;
-		goto cleanup;
-	}
-
-	if (value) {
+	if (value == GPIOD_LINE_VALUE_ACTIVE) {
 		pcbrev = 'A';
 	} else {
 		/* Rev < 10 couldn't read build resistors due
@@ -259,22 +244,22 @@ int do_ts7990_info(int i2cfd)
 		if (fpgarev < 10 || !g12) {
 			pcbrev = 'B';
 		} else {
-			value = gpiod_line_get_value(rev_d_line);
-			if (value < 0) {
-				perror("gpiod_line_get_value");
+			value = gpiod_line_request_get_value(rev_d_line, 30);
+			if (value == GPIOD_LINE_VALUE_ERROR) {
+				perror("rev_d_line read error");
 				ret = 1;
 				goto cleanup;
 			}
 
-			if (value == 0) {
-				value = gpiod_line_get_value(rev_e_line);
-				if (value < 0) {
-					perror("gpiod_line_get_value");
+			if (value == GPIOD_LINE_VALUE_INACTIVE) {
+				value = gpiod_line_request_get_value(rev_e_line, 3);
+				if (value == GPIOD_LINE_VALUE_ERROR) {
+					perror("rev_e_line read error");
 					ret = 1;
 					goto cleanup;
 				}
 
-				if (value == 0) {
+				if (value == GPIOD_LINE_VALUE_INACTIVE) {
 					pcbrev = 'E';
 				} else {
 					pcbrev = 'D';
@@ -292,45 +277,54 @@ int do_ts7990_info(int i2cfd)
 	printf("boardopt=%d\n", boardopt);
 
 cleanup:
-	if (cpu_chip1)
-		gpiod_chip_close(cpu_chip1);
-	if (cpu_chip2)
-		gpiod_chip_close(cpu_chip2);
-	if (cpu_chip4)
-		gpiod_chip_close(cpu_chip4);
+	if (rev_b_line)
+		gpiod_line_request_release(rev_b_line);
+	if (rev_d_line)
+		gpiod_line_request_release(rev_d_line);
+	if (rev_e_line)
+		gpiod_line_request_release(rev_e_line);
 
 	return ret;
 }
 
 int do_ts7970_info(int i2cfd)
 {
-	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip6 = 0;
-	struct gpiod_line *rev_b_line = 0, *rev_d_line = 0, *rev_g_line = 0, *rev_h_line = 0;
+	struct gpiod_line_request *rev_b_line = NULL,
+				  *rev_d_line = NULL,
+				  *rev_g_line = NULL,
+				  *rev_h_line = NULL;
 	uint8_t r39, r37, r36, r34;
 	uint8_t boardopt;
 	uint8_t fpgarev;
 	char pcbrev;
 	uint8_t val;
-	int value;
+	enum gpiod_line_value value;
 	int ret = 0;
 
-	cpu_chip0 = gpiod_chip_open("/dev/gpiochip0");
-	if (!cpu_chip0) {
-		perror("chip0: gpiod_chip_open");
+	rev_b_line = request_input_line("/dev/gpiochip6", 1, "tshwctl");
+	if (!rev_b_line) {
+		perror("Unable to open rev_b_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
-	if (!cpu_chip1) {
-		perror("chip1: gpiod_chip_open");
+	rev_d_line = request_input_line("/dev/gpiochip6", 0, "tshwctl");
+	if (!rev_d_line) {
+		perror("Unable to open rev_d_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip6 = gpiod_chip_open("/dev/gpiochip6");
-	if (!cpu_chip6) {
-		perror("chip6: gpiod_chip_open");
+	rev_g_line = request_input_line("/dev/gpiochip0", 29, "tshwctl");
+	if (!rev_g_line) {
+		perror("Unable to open rev_e_line");
+		ret = 1;
+		goto cleanup;
+	}
+
+	rev_h_line = request_input_line("/dev/gpiochip1", 3, "tshwctl");
+	if (!rev_h_line) {
+		perror("Unable to open rev_e_line");
 		ret = 1;
 		goto cleanup;
 	}
@@ -344,43 +338,24 @@ int do_ts7970_info(int i2cfd)
 
 	boardopt = r34 | (r36 << 1) | (r37 << 2) | (r39 << 3);
 
-	rev_b_line = gpiod_chip_get_line(cpu_chip6, 1);
-	rev_d_line = gpiod_chip_get_line(cpu_chip6, 0);
-	rev_g_line = gpiod_chip_get_line(cpu_chip0, 29);
-	rev_h_line = gpiod_chip_get_line(cpu_chip1, 3);
-	if (!rev_b_line || !rev_d_line || !rev_g_line || !rev_h_line) {
-		perror("gpiod_chip_get_line");
+	value = gpiod_line_request_get_value(rev_h_line, 3);
+	if (value == GPIOD_LINE_VALUE_ERROR) {
+		perror("rev_h_line read error");
 		ret = 1;
 		goto cleanup;
 	}
 
-	if (gpiod_line_request_input(rev_b_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_g_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_h_line, "tshwctl") < 0) {
-		perror("gpiod_line_request_input");
-		ret = 1;
-		goto cleanup;
-	}
-
-	value = gpiod_line_get_value(rev_h_line);
-	if (value < 0) {
-		perror("gpiod_line_get_value");
-		ret = 1;
-		goto cleanup;
-	}
-
-	if (value == 0) {
+	if (value == GPIOD_LINE_VALUE_INACTIVE) {
 		pcbrev = 'H';
 	} else {
-		value = gpiod_line_get_value(rev_g_line);
-		if (value < 0) {
-			perror("gpiod_line_get_value");
+		value = gpiod_line_request_get_value(rev_g_line, 29);
+		if (value == GPIOD_LINE_VALUE_ERROR) {
+			perror("rev_g_line read error");
 			ret = 1;
 			goto cleanup;
 		}
 
-		if (value == 0) {
+		if (value == GPIOD_LINE_VALUE_INACTIVE) {
 			pcbrev = 'G';
 		} else {
 			/* REV F required a fuse to check */
@@ -418,23 +393,23 @@ int do_ts7970_info(int i2cfd)
 			if (val & 0x1) {
 				pcbrev = 'F';
 			} else {
-				value = gpiod_line_get_value(rev_b_line);
-				if (value < 0) {
-					perror("gpiod_line_get_value");
+				value = gpiod_line_request_get_value(rev_b_line, 1);
+				if (value == GPIOD_LINE_VALUE_ERROR) {
+					perror("rev_b_line read error");
 					ret = 1;
 					goto cleanup;
 				}
 
-				if (value) {
+				if (value == GPIOD_LINE_VALUE_ACTIVE) {
 					pcbrev = 'A';
 				} else {
-					value = gpiod_line_get_value(rev_d_line);
-					if (value < 0) {
-						perror("gpiod_line_get_value");
+					value = gpiod_line_request_get_value(rev_d_line, 0);
+					if (value == GPIOD_LINE_VALUE_ERROR) {
+						perror("rev_d_line read error");
 						ret = 1;
 						goto cleanup;
 					}
-					if (value) {
+					if (value == GPIOD_LINE_VALUE_ACTIVE) {
 						pcbrev = 'B';
 					} else {
 						pcbrev = 'D';
@@ -450,24 +425,27 @@ int do_ts7970_info(int i2cfd)
 	printf("boardopt=%d\n", boardopt);
 
 cleanup:
-	if (cpu_chip0)
-		gpiod_chip_close(cpu_chip0);
-	if (cpu_chip1)
-		gpiod_chip_close(cpu_chip1);
-	if (cpu_chip6)
-		gpiod_chip_close(cpu_chip6);
+	if (rev_b_line)
+		gpiod_line_request_release(rev_b_line);
+	if (rev_d_line)
+		gpiod_line_request_release(rev_d_line);
+	if (rev_g_line)
+		gpiod_line_request_release(rev_g_line);
+	if (rev_h_line)
+		gpiod_line_request_release(rev_h_line);
 
 	return ret;
 }
 
 int do_ts4900_info(int i2cfd)
 {
-	struct gpiod_chip *cpu_chip0 = 0, *cpu_chip1 = 0, *cpu_chip5 = 0;
-	struct gpiod_line *rev_e_line = 0, *rev_b_line = 0, *rev_d_line = 0;
+	struct gpiod_line_request *rev_b_line = NULL,
+				  *rev_d_line = NULL,
+				  *rev_e_line = NULL;
 	uint8_t fpgarev;
 	char pcbrev;
 	uint8_t val;
-	int value;
+	enum gpiod_line_value value;
 	int ret = 0;
 
 	val = fpeek8(i2cfd, 51);
@@ -477,70 +455,54 @@ int do_ts4900_info(int i2cfd)
 	printf("g1=%d\n", !(val & 0x4));
 	printf("b1=%d\n", !(val & 0x8));
 
-	cpu_chip0 = gpiod_chip_open("/dev/gpiochip0");
-	if (!cpu_chip0) {
-		perror("chip0: gpiod_chip_open");
+	rev_b_line = request_input_line("/dev/gpiochip1", 11, "tshwctl");
+	if (!rev_b_line) {
+		perror("Unable to open rev_b_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip1 = gpiod_chip_open("/dev/gpiochip1");
-	if (!cpu_chip1) {
-		perror("chip1: gpiod_chip_open");
+	rev_d_line = request_input_line("/dev/gpiochip5", 5, "tshwctl");
+	if (!rev_d_line) {
+		perror("Unable to open rev_d_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	cpu_chip5 = gpiod_chip_open("/dev/gpiochip5");
-	if (!cpu_chip5) {
-		perror("chip5: gpiod_chip_open");
+	rev_e_line = request_input_line("/dev/gpiochip0", 29, "tshwctl");
+	if (!rev_e_line) {
+		perror("Unable to open rev_e_line");
 		ret = 1;
 		goto cleanup;
 	}
 
-	rev_b_line = gpiod_chip_get_line(cpu_chip1, 11);
-	rev_d_line = gpiod_chip_get_line(cpu_chip5, 5);
-	rev_e_line = gpiod_chip_get_line(cpu_chip0, 29);
-	if (!rev_d_line || !rev_b_line || !rev_e_line) {
-		perror("gpiod_chip_get_line");
+	value = gpiod_line_request_get_value(rev_e_line, 29);
+	if (value == GPIOD_LINE_VALUE_ERROR) {
+		perror("rev_e_line read error");
 		ret = 1;
 		goto cleanup;
 	}
 
-	if (gpiod_line_request_input(rev_e_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_d_line, "tshwctl") < 0 ||
-	    gpiod_line_request_input(rev_b_line, "tshwctl") < 0) {
-		perror("gpiod_line_request_input");
-		ret = 1;
-		goto cleanup;
-	}
-
-	value = gpiod_line_get_value(rev_e_line);
-	if (value < 0) {
-		perror("gpiod_line_get_value");
-		ret = 1;
-		goto cleanup;
-	}
-	if (!value) {
+	if (value == GPIOD_LINE_VALUE_INACTIVE) {
 		pcbrev = 'E';
 	} else {
-		value = gpiod_line_get_value(rev_b_line);
-		if (value < 0) {
-			perror("gpiod_line_get_value");
+		value = gpiod_line_request_get_value(rev_b_line, 11);
+		if (value == GPIOD_LINE_VALUE_ERROR) {
+			perror("rev_e_line read error");
 			ret = 1;
 			goto cleanup;
 		}
-		if (value) {
+		if (value == GPIOD_LINE_VALUE_ACTIVE) {
 			pcbrev = 'A';
 		} else {
-			value = gpiod_line_get_value(rev_d_line);
-			if (value < 0) {
-				perror("gpiod_line_get_value");
+			value = gpiod_line_request_get_value(rev_d_line, 5);
+			if (value == GPIOD_LINE_VALUE_ERROR) {
+				perror("rev_d_line read error");
 				ret = 1;
 				goto cleanup;
 			}
 
-			if (value) {
+			if (value == GPIOD_LINE_VALUE_ACTIVE) {
 				pcbrev = 'C';
 			} else {
 				pcbrev = 'D';
@@ -553,12 +515,12 @@ int do_ts4900_info(int i2cfd)
 	printf("pcbrev=%c\n", pcbrev);
 
 cleanup:
-	if (cpu_chip0)
-		gpiod_chip_close(cpu_chip0);
-	if (cpu_chip1)
-		gpiod_chip_close(cpu_chip1);
-	if (cpu_chip5)
-		gpiod_chip_close(cpu_chip5);
+	if (rev_b_line)
+		gpiod_line_request_release(rev_b_line);
+	if (rev_d_line)
+		gpiod_line_request_release(rev_d_line);
+	if (rev_e_line)
+		gpiod_line_request_release(rev_e_line);
 
 	return ret;
 }
